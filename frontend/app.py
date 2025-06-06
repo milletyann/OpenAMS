@@ -2,11 +2,11 @@
 import streamlit as st
 import requests
 from training_tab import training_tab
-from athlete_tab import athlete_tab
+from user_tab import user_tab
 
-tab = st.sidebar.selectbox("Choose Tab", ["Athlete", "Training"])
+tab = st.sidebar.selectbox("Choose Tab", ["User", "Training"])
 
-if tab == "Athlete":
-    athlete_tab()
+if tab == "User":
+    user_tab()
 elif tab == "Training":
     training_tab()

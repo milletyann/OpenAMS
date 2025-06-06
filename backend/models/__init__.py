@@ -1,5 +1,5 @@
 # app/models/__init__.py
-from .athlete import Athlete, AthleteCreate
-from .training import TrainingSession, AthleteTrainingLink
+from .user import User, UserCreate
+from .training import TrainingSession, UserTrainingLinks
 
-__all__ = ["Athlete", "AthleteCreate", "TrainingSession", "AthleteTrainingLink"]
+__all__ = ["User", "UserCreate", "TrainingSession", "UserTrainingLinks"]

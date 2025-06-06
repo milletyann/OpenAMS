@@ -9,19 +9,28 @@ class TrainingSession(SQLModel, table=True):
     date: date
     duration_minutes: Optional[int] = None
     type: str
-
     notes: Optional[str] = None
+    
+    coach_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    
+    users: List["UserTrainingLinks"] = Relationship(back_populates="training")
+    coaches: List["CoachTrainingLinks"] = Relationship(back_populates="training")
 
-    athletes: List["AthleteTrainingLink"] = Relationship(back_populates="training")
 
-
-class AthleteTrainingLink(SQLModel, table=True):
-    athlete_id: Optional[int] = Field(default=None, foreign_key="athlete.id", primary_key=True)
+class UserTrainingLinks(SQLModel, table=True):
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id", primary_key=True)
     training_id: Optional[int] = Field(default=None, foreign_key="trainingsession.id", primary_key=True)
 
-    athlete: "Athlete" = Relationship(back_populates="trainings")
-    training: "TrainingSession" = Relationship(back_populates="athletes")
+    user: "User" = Relationship(back_populates="training_sessions")
+    training: "TrainingSession" = Relationship(back_populates="users")
 
 
+class CoachTrainingLinks(SQLModel, table=True):
+    coach_id: int = Field(default=None, foreign_key="user.id", primary_key=True)
+    training_id: int = Field(default=None, foreign_key="trainingsession.id", primary_key=True)
 
-from backend.models.athlete import Athlete  # Do this at the bottom
+    coach: "User" = Relationship(back_populates="coaches_supervising")
+    training: "TrainingSession" = Relationship(back_populates="coaches")
+
+
+from backend.models.user import User  # Do this at the bottom

@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import select, Session
-from backend.models import Athlete, AthleteCreate, TrainingSession, AthleteTrainingLink
+from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks
 from backend.database import init_db, get_session
 from typing import List
 
@@ -13,48 +13,48 @@ def on_startup():
     init_db()
 
 
-# === ATHLETES === #
-# --- Récup tous les athlètes ---
-@app.get("/athletes/", response_model=List[Athlete])
-def read_athletes(session: Session = Depends(get_session)):
-    statement = select(Athlete)
+# === USERS === #
+# --- Récup tous les users ---
+@app.get("/users/", response_model=List[User])
+def read_users(session: Session = Depends(get_session)):
+    statement = select(User)
     return session.exec(statement).all()
 
-# --- Créer un.e athlète
-@app.post("/athletes/", response_model=Athlete)
-def create_athlete(athlete: AthleteCreate, session: Session = Depends(get_session)):
-    new_athlete = Athlete.from_orm(athlete)
-    session.add(new_athlete)
+# --- Créer un.e user
+@app.post("/users/", response_model=User)
+def create_user(user: UserCreate, session: Session = Depends(get_session)):
+    new_user = User.from_orm(user)
+    session.add(new_user)
     session.commit()
-    session.refresh(new_athlete)
-    return new_athlete
+    session.refresh(new_user)
+    return new_user
 
-# --- Mettre à jour un.e athlète ---
-@app.put("/athletes/{athlete_id}", response_model=Athlete)
-def update_athlete(athlete_id: int, athlete: AthleteCreate, session: Session = Depends(get_session)):
-    db_athlete = session.get(Athlete, athlete_id)
-    if not db_athlete:
-        raise HTTPException(status_code=404, detail="Athlete not found")
+# --- Mettre à jour un.e user ---
+@app.put("/users/{user_id}", response_model=User)
+def update_user(user_id: int, user: UserCreate, session: Session = Depends(get_session)):
+    db_user = session.get(User, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    db_athlete.name = athlete.name
-    db_athlete.age = athlete.age
-    db_athlete.sport = athlete.sport
-    session.add(db_athlete)
+    db_user.name = user.name
+    db_user.age = user.age
+    db_user.sport = user.sport
+    session.add(db_user)
     session.commit()
-    session.refresh(db_athlete)
-    return db_athlete
+    session.refresh(db_user)
+    return db_user
 
 
-# --- Supprimer un.e athlète ---
-@app.delete("/athletes/{athlete_id}")
-def delete_athlete(athlete_id: int, session: Session = Depends(get_session)):
-    db_athlete = session.get(Athlete, athlete_id)
-    if not db_athlete:
-        raise HTTPException(status_code=404, detail="Athlete not found")
+# --- Supprimer un.e User ---
+@app.delete("/users/{user_id}")
+def delete_user(user_id: int, session: Session = Depends(get_session)):
+    db_user = session.get(User, user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    session.delete(db_athlete)
+    session.delete(db_user)
     session.commit()
-    return {"message": "Athlete deleted"}
+    return {"message": "User deleted"}
 
 
 
@@ -67,7 +67,7 @@ def create_training(
     session: Session = Depends(get_session)
 ):
     # Vérifier que tous les athlètes existent
-    athletes = session.exec(select(Athlete).where(Athlete.id.in_(athlete_ids))).all()
+    athletes = session.exec(select(User).where(User.id.in_(athlete_ids))).all()
     if len(athletes) != len(athlete_ids):
         raise HTTPException(status_code=400, detail="Un ou plusieurs athlètes sont introuvables")
 
@@ -78,7 +78,7 @@ def create_training(
 
     # Créer les liens
     for athlete in athletes:
-        link = AthleteTrainingLink(athlete_id=athlete.id, training_session_id=training.id)
+        link = UserTrainingLinks(user_id=athlete.id, training_session_id=training.id)
         session.add(link)
 
     session.commit()
@@ -91,9 +91,9 @@ def read_trainings(session: Session = Depends(get_session)):
 
 
 # --- Lister les sessions d’un.e athlète ---
-@app.get("/athletes/{athlete_id}/trainings", response_model=List[TrainingSession])
-def read_athlete_trainings(athlete_id: int, session: Session = Depends(get_session)):
-    athlete = session.get(Athlete, athlete_id)
-    if not athlete:
-        raise HTTPException(status_code=404, detail="Athlete not found")
-    return athlete.trainings
+@app.get("/users/{user_id}/trainings", response_model=List[TrainingSession])
+def read_user_trainings(user_id: int, session: Session = Depends(get_session)):
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Users not found")
+    return user.trainings
