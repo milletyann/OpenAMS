@@ -14,13 +14,9 @@ def on_startup():
 
 
 # === USERS === #
-# --- Récup tous les users ---
-@app.get("/users/", response_model=List[User])
-def read_users(session: Session = Depends(get_session)):
-    statement = select(User)
-    return session.exec(statement).all()
-
-# --- Créer un.e user
+# --- Créer un.e user ---
+# Le "/users/" qu'on met entre parenthèses est défini dans CES fonctions, on pourrait mettre ce qu'on veut mais c'est pour effectuer des requêtes autre part dans le code, pour pouvoir différencier des fonctions qui renvoient des résultats différents
+# ex: récup tous les users et récup tous les athlètes
 @app.post("/users/", response_model=User)
 def create_user(user: UserCreate, session: Session = Depends(get_session)):
     new_user = User.from_orm(user)
@@ -28,6 +24,18 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     session.commit()
     session.refresh(new_user)
     return new_user
+
+# --- Récup tous les users ---
+@app.get("/users/", response_model=List[User])
+def read_users(session: Session = Depends(get_session)):
+    statement = select(User)
+    return session.exec(statement).all()
+
+# --- Récup tou.te.s les athlètes ---
+@app.get("/athletes", response_model=List[User])
+def read_athletes(session: Session = Depends(get_session)):
+    return session.exec(select(User).where(User.role == "ATHLETE")).all()
+
 
 # --- Mettre à jour un.e user ---
 @app.put("/users/{user_id}", response_model=User)
@@ -84,16 +92,20 @@ def create_training(
     session.commit()
     return training
 
-# --- Lister toutes les sessions ---
-@app.get("/trainings/", response_model=List[TrainingSession])
-def read_trainings(session: Session = Depends(get_session)):
-    return session.exec(select(TrainingSession)).all()
-
-
 # --- Lister les sessions d’un.e athlète ---
 @app.get("/users/{user_id}/trainings", response_model=List[TrainingSession])
-def read_user_trainings(user_id: int, session: Session = Depends(get_session)):
-    user = session.get(User, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="Users not found")
-    return user.trainings
+def get_user_trainings(user_id: int, session: Session = Depends(get_session)):
+    training_links = session.exec(
+        select(UserTrainingLinks).where(UserTrainingLinks.user_id == user_id)
+    ).all()
+    
+    training_ids = [link.training_id for link in training_links]
+    
+    if not training_ids:
+        return []
+    
+    trainings = session.exec(
+        select(TrainingSession).where(TrainingSession.id.in_(training_ids))
+    ).all()
+    
+    return trainings
