@@ -8,21 +8,21 @@ This project is first aimed to serve as my training diary as well as for a perso
 
 openams/\
 ├─── backend/\
-│  ├─── \_\_init\_\_.py\
-│  ├─── main.py\
-│  ├─── crud.py\
-│  ├─── database.py\
-│  ├─── data/\
-│  │  └── database.db\
-│  ├─── models/\
-│  │  ├── \_\_init\_\_.py\
-│  │  ├── athlete.py\
-│  │  └── training.py\
+│   ├─── \_\_init\_\_.py\
+│   ├─── main.py\
+│   ├─── crud.py\
+│   ├─── database.py\
+│   ├─── data/\
+│   │   └── database.db\
+│   ├─── models/\
+│   │   ├── \_\_init\_\_.py\
+│   │    ├── athlete.py\
+│   │   └── training.py\
 ├─── frontend/\
-│  ├─── \_\_init\_\_.py\
-│  ├─── app.py\
-│  ├─── athlete_tab.py\
-│  └─── training_tab.py\
+│   ├─── \_\_init\_\_.py\
+│   ├─── app.py\
+│   ├─── athlete_tab.py\
+│   └─── training_tab.py\
 ├─── requirements.txt\
 └─── README.md\
 
