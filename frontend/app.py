@@ -12,18 +12,16 @@ tab = st.sidebar.radio(
 
 
 if tab == "Home":
-    st.subheader("")
     user_tab()
 
 elif tab == "Athlete":
-    st.subheader("Athlete")
+    pass
 
 elif tab == "Training":
-    st.subheader("Training Logs")
     training_tab()
 
 elif tab == "Health":
-    st.subheader("Health")
+    pass
     
 elif tab == "Settings":
-    st.subheader("Settings")
+    pass

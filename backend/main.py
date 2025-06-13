@@ -2,6 +2,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import select, Session
 from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks
+from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
 
@@ -34,7 +35,7 @@ def read_users(session: Session = Depends(get_session)):
 # --- Récup tou.te.s les athlètes ---
 @app.get("/athletes", response_model=List[User])
 def read_athletes(session: Session = Depends(get_session)):
-    return session.exec(select(User).where(User.role == "ATHLETE")).all()
+    return session.exec(select(User).where(User.role == Role.Athlete)).all()
 
 
 # --- Mettre à jour un.e user ---

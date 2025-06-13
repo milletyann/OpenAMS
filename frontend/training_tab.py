@@ -10,12 +10,15 @@ API_URL = "http://127.0.0.1:8000"
 
 from backend.database import engine
 from backend.models.user import User
+from backend.models.enumeration import Role
 from backend.models.training import TrainingSession, UserTrainingLinks, CoachTrainingLinks
 from datetime import date
 
 
 def training_tab():
     display_trainings()
+    st.divider()
+    edit_training_session()
     st.divider()
     add_training_session()
 
@@ -59,6 +62,8 @@ def display_trainings():
         st.error("Failed to fetch athletes.")
     
     
+def edit_training_session():
+    st.title("Edit Training Session")
 
 def add_training_session():
     st.title("Create Training Session")
@@ -74,12 +79,12 @@ def add_training_session():
         sport = st.selectbox("Sport", ["Athletisme", "Volley-ball"])
         
         # Récup tous les athlètes
-        athletes = session.exec(select(User).where(User.role == "ATHLETE")).all()
-        athlete_options = {f"{a.name} ({a.sport})": a.id for a in athletes}
+        athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
+        athlete_options = {f"{a.name}": a.id for a in athletes}
         selected_names = st.multiselect("Select Athletes", options=list(athlete_options.keys()))
         
         # Récup tous les coachs
-        coaches = session.exec(select(User).where(User.role == "COACH")).all()
+        coaches = session.exec(select(User).where(User.role == Role.Coach)).all()
         coach_mapping = {f"{c.name} ({c.sport})": c.id for c in coaches}
         coach_display_options = ["None"] + list(coach_mapping.keys())
         selected_coach = st.selectbox("Assign Coach", options=coach_display_options)

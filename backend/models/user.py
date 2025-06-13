@@ -1,24 +1,13 @@
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 from enum import Enum
-
-
-# --- Rôles ---
-class Role(Enum):
-    ATHLETE = "Athlète"
-    COACH = "Coach"
-    ADMIN = "Administrative"
-    
-class Sexe(Enum):
-    M = "M"
-    F = "F"
-    NP = "Autre"
+from backend.models.enumeration import Role, Sexe, Sport
 
 # --- User ---
 class UserBase(SQLModel):
     name: str
     role: Role
-    sport: str
+    sport: Sport
     age: int
     sexe: Sexe
 

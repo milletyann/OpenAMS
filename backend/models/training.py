@@ -1,13 +1,8 @@
 # app/models/training.py
 from typing import Optional, List
-from enum import Enum
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import date
-
-
-class Sport(Enum):
-    ATHLETISME = "Athletisme"
-    VOLLEYBALL = "Volley-ball"
+from backend.models.enumeration import Sport
 
 class TrainingSession(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
