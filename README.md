@@ -6,15 +6,14 @@ This project is first aimed to serve as my training diary as well as for a perso
 
 ## Code structure
 
-openams/
-
-├── backend/
-│ ├── main.py
-│ ├── crud.py
-│ ├── database.py
-│ ├── data/
-│ │ └── database.db
-│ ├── models/
+openams/ \
+├── backend/\
+│ ├── main.py\
+│ ├── crud.py\
+│ ├── database.py\
+│ ├── data/\
+│ │ └── database.db\
+│ ├── models/\
 │ │ ├── **init**.py
 │ │ ├── athlete.py
 │ │ └── training.py
