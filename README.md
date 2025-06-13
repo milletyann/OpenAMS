@@ -6,25 +6,25 @@ This project is first aimed to serve as my training diary as well as for a perso
 
 ## Code structure
 
-openams/\
-├── backend/\
-│ ├── __init__.py\
-│ ├── main.py\
-│ ├── crud.py\
-│ ├── database.py\
-│ ├── data/\
-│ │ └── database.db\
-│ ├── models/\
-│ │ ├── __init__.py\
-│ │ ├── athlete.py\
-│ │ └── training.py\
-├── frontend/\
-│ ├── __init__.py\
-│ ├── app.py\
-│ ├── athlete_tab.py\
-│ └── training_tab.py\
-├── requirements.txt\
-└── README.md\
+openams/\\
+├─── backend/\\
+│  ├─── \_\_init\_\_.py\\
+│  ├─── main.py\\
+│  ├─── crud.py\\
+│  ├─── database.py\\
+│  ├─── data/\\
+│  │  └── database.db\\
+│  ├─── models/\\
+│  │  ├── \_\_init\_\_.py\\
+│  │  ├── athlete.py\\
+│  │  └── training.py\\
+├─── frontend/\\
+│  ├─── \_\_init\_\_.py\\
+│  ├─── app.py\\
+│  ├─── athlete_tab.py\\
+│  └─── training_tab.py\\
+├─── requirements.txt\\
+└─── README.md\\
 
 ## Ideas draft
 
