@@ -9,19 +9,11 @@ This project is first aimed to serve as my training diary as well as for a perso
 openams/
 
 ├── backend/
-
 │ ├── main.py
-
 │ ├── crud.py
-
 │ ├── database.py
-
 │ ├── data/
-
-│ │ ├── athlete.db
-
-│ │ ├── training.db
-
+│ │ └── database.db
 │ ├── models/
 │ │ ├── **init**.py
 │ │ ├── athlete.py
