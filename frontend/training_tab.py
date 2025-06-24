@@ -4,64 +4,172 @@ import uuid
 import sys
 import pathlib
 import requests
+from helpers import *
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
+st.set_page_config(layout="wide") # Pourquoi ici seulement et ça marche partout??
 API_URL = "http://127.0.0.1:8000"
 
 from backend.database import engine
 from backend.models.user import User
-from backend.models.enumeration import Role
+from backend.models.enumeration import Role, Sport
 from backend.models.training import TrainingSession, UserTrainingLinks, CoachTrainingLinks
-from datetime import date
-
+from datetime import date, timedelta
 
 def training_tab():
     display_trainings()
     st.divider()
-    edit_training_session()
-    st.divider()
     add_training_session()
-
+    
 def display_trainings():
     st.title("Training History")
-    
-    athletes_response = requests.get(f"{API_URL}/athletes")
-    if athletes_response.status_code == 200:
-        athletes = athletes_response.json()
-        athlete_options = {f"{a['name']}": a["id"] for a in athletes}
 
-        selected_name = st.selectbox("Select an athlete", [""] + list(athlete_options.keys()))
-        if selected_name:
-            user_id = athlete_options[selected_name]
+    with Session(engine) as session:
+        # --- Select Athlete ---
+        athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
+        athlete_options = {f"{a.name}": a.id for a in athletes}
+        selected_name = st.selectbox("Select Athlete", options= [""] + list(athlete_options.keys()))
+        athlete_id = athlete_options.get(selected_name)
+        
+        if not athlete_id:
+            st.info("Veuillez sélectionner un.e athlète pour afficher ses entraînements.")
+            return
+
+        # --- Get all training sessions linked to this athlete ---
+        link_query = select(UserTrainingLinks.training_id).where(UserTrainingLinks.user_id == athlete_id)
+        training_ids = [r for r in session.exec(link_query).all()]
+
+        if not training_ids:
+            st.info("No training sessions found for this athlete.")
+            return
+
+        # --- Base query ---
+        base_query = select(TrainingSession).where(TrainingSession.id.in_(training_ids))
+        all_sessions = session.exec(base_query).all()
+
+        # --- Build Filters ---
+        with st.expander("Filters", expanded=True):
+            col1, col2, col3 = st.columns(3)
+
+            # Sport filter
+            with col1:
+                selected_sport = st.selectbox(
+                    "Sport",
+                    options=[None] + list(Sport),
+                    format_func=lambda x: x.value if x else "All Sports"
+                )
+
+            # Filter training sessions by selected sport
+            filtered_sessions = [s for s in all_sessions if (not selected_sport or s.sport == selected_sport)]
+
+            # Training types available for this sport only
+            available_types = sorted(set(s.type for s in filtered_sessions))
+
+            with col2:
+                selected_type = st.selectbox(
+                    "Training Type",
+                    options=["All"] + available_types
+                )
+
+            # Intensity range
+            with col3:
+                min_intensity, max_intensity = st.slider(
+                    "Intensity Range", 1, 10, (1, 10)
+                )
+
+            col4, col5, col6 = st.columns(3)
+
+            # Date range
+            all_dates = [s.date for s in all_sessions]
+            default_start = min(all_dates) if all_dates else date.today()
+            default_end = max(all_dates) if all_dates else date.today()
+
+            with col4:
+                start_date = st.date_input("Start Date", value=default_start)
+
+            with col5:
+                end_date = st.date_input("End Date", value=default_end)  
             
-            # 2. Fetch and show past trainings
-            trainings_response = requests.get(f"{API_URL}/users/{user_id}/trainings")
-            if trainings_response.status_code == 200:
-                trainings = trainings_response.json()
+            # Duration range
+            with col6:
+                min_duration, max_duration = st.slider(
+                    "Duration (min)", 5, 240, (5, 240), step=5
+                )
+            
+            with st.container():
+                sort_options = {
+                    "Most Recent": lambda s: s.date,
+                    "Most Intense": lambda s: s.intensity,
+                    "Longest Duration": lambda s: s.duration_minutes,
+                }
+                selected_sort = st.selectbox("Sort Trainings By", options=list(sort_options.keys()))
+                reverse_sort = True  # All sorts are descending
 
-                if trainings:
-                    st.subheader(f"📋 Past Trainings for {selected_name}")
-                    st.dataframe(
-                        [
-                            {
-                                "Date": t["date"],
-                                "Sport": t["sport"],
-                                "Type de Séance": t["type"],
-                                "Durée (min)": t["duration_minutes"],
-                                "Intensité": t["intensity"],
-                                "Notes": t.get("notes", "")
-                            }
-                            for t in trainings
-                        ]
-                    )
-                else:
-                    st.info("No training sessions found for this athlete.")
-            else:
-                st.error("Failed to fetch trainings.")
-    else:
-        st.error("Failed to fetch athletes.")
-    
-    
+        # --- Apply filters ---
+        final_sessions = [
+            s for s in filtered_sessions
+            if (selected_type == "All" or s.type == selected_type)
+            and (min_intensity <= s.intensity <= max_intensity)
+            and (min_duration <= s.duration_minutes <= max_duration)
+            and (start_date <= s.date <= end_date)
+        ]
+        
+        # --- Sort Sessions ---
+        sort_key = sort_options[selected_sort]
+        final_sessions.sort(key=sort_key, reverse=reverse_sort)
+
+        # --- Pagination ---
+        sessions_per_page = 6
+        total_pages = (len(final_sessions) - 1) // sessions_per_page + 1 if final_sessions else 1
+        current_page = st.session_state.get("current_page", 1)
+
+        if total_pages > 1:
+            st.markdown("---")  # subtle separation
+
+        # Display trainings
+        start_idx = (current_page - 1) * sessions_per_page
+        end_idx = start_idx + sessions_per_page
+        sessions_to_show = final_sessions[start_idx:end_idx]
+        
+        # Headers row
+        cols = st.columns([1, 1, 1, 1, 1, 2])  # width ratios
+        headers = ["Date", "Type", "Sport", "Duration", "Intensity", "Notes"]
+        for col, header in zip(cols, headers):
+            col.markdown(f"**{header}**")
+        st.markdown("---")  # separator below header# Rows: each training session
+        
+        # Training session rows
+        for session_ in sessions_to_show:
+            cols = st.columns([1, 1, 1, 1, 1, 2])
+            cols[0].write(session_.date)
+            cols[1].write(session_.type)
+            cols[2].write(session_.sport.value)
+            color_d = duration_color(session_.duration_minutes)
+            cols[3].markdown(
+                f'<span style="color:{color_d}; font-weight:bold;">{session_.duration_minutes} minutes</span>',
+                unsafe_allow_html=True,
+            )
+            color_i = intensity_color(session_.intensity)
+            cols[4].markdown(
+                f'<span style="color:{color_i}; font-weight:bold;">{session_.intensity}/10</span>',
+                unsafe_allow_html=True,
+            )
+            cols[5].write(clip_text(session_.notes, 100))
+        
+        # --- Pagination control with numbered buttons (bottom only) ---
+        if total_pages > 1:
+            st.write(f"Page {current_page} of {total_pages}")
+
+            _, center_col, _ = st.columns([1, 1, 1])
+            with center_col:
+                cols = st.columns(total_pages)
+                for i in range(total_pages):
+                    page_num = i + 1
+                    # Highlight the button of current page
+                    button_label = f"**{page_num}**" if page_num == current_page else str(page_num)
+                    if cols[i].button(button_label, key=f"page_button_{page_num}"):
+                        st.session_state["current_page"] = page_num
+
 def edit_training_session():
     st.title("Edit Training Session")
 
@@ -70,13 +178,15 @@ def add_training_session():
 
     # Types de séances selon le sport choisi
     session_types = {
-        "Athletisme": ["Technique", "Lactique", "Aérobie", "Sprint", "Haies", "Élan Complet", "Muscu", "PPG", "Simulation Compétition"],
-        "Volley-ball": ["Tactique", "Technique", "Simulation Match", "PPG", "Muscu", "Coordination"],
+        "Divers": ["Sport collectif", "Randonnée", "Sortie entre copains", "Sport de raquette"],
+        "Volley-ball": ["Tactique", "Technique", "Match", "PPG", "Muscu", "Coordination"],
+        "Athlétisme": ["Sprint - Technique", "Sprint - Lactique", "Course - Aérobie", "Sprint - Départ", "Sprint - Haies", "Saut - Technique", "Saut - Élan réduit", "Saut - Élan complet", "Saut - Prise de marques", "Saut - Courses d'élan", "Lancer - Technique", "Lancer - Élan complet", "Lancer - PPG", "Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "PPG", "Compétition - Décathlon", "Compétition - 100m", "Compétition - Longueur", "Compétition - Poids", "Compétition - Hauteur", "Compétition - 400m", "Compétition - 110mH", "Compétition - Disque", "Compétition - Perche", "Compétition - Javelot", "Compétition - 1500m"],
+        "Mobilité": ["Général", "Spécifique - Épaules", "Spécifique - Hanches", "Spécifique - Dos", "Spécifique - Jambes", "Spécifique - Bas du corps", "Spécifique - Haut du corps"],
     }
     
     with Session(engine) as session:
         # Sport entraîné
-        sport = st.selectbox("Sport", ["Athletisme", "Volley-ball"])
+        sport = st.selectbox("Sport", options=list(Sport), format_func=lambda x: x.value, index=0)
         
         # Récup tous les athlètes
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
@@ -85,7 +195,7 @@ def add_training_session():
         
         # Récup tous les coachs
         coaches = session.exec(select(User).where(User.role == Role.Coach)).all()
-        coach_mapping = {f"{c.name} ({c.sport})": c.id for c in coaches}
+        coach_mapping = {f"{c.name} ({c.sport.value})": c.id for c in coaches}
         coach_display_options = ["None"] + list(coach_mapping.keys())
         selected_coach = st.selectbox("Assign Coach", options=coach_display_options)
     
@@ -100,8 +210,12 @@ def add_training_session():
         if st.button("Create Training Session"):
             if not selected_names:
                 st.warning("Please select at least one athlete.")
+            if not sport:
+                st.warning("Please select a sport.")
+
             # pas besoin de faire pareil avec les coach pcq coach n'est pas obligatoire
             else:
+                print(sport)
                 new_session = TrainingSession(
                     sport=sport,
                     type=session_type,
@@ -134,3 +248,37 @@ def add_training_session():
 
                 session.commit()
                 st.success(f"Training session created and linked to {len(selected_names)} athletes.")
+                
+                
+                
+########################
+### HELPER FUNCTIONS ###
+######################## 
+                
+def intensity_color(intensity: int) -> str:
+    if 1 <= intensity <= 4:
+        return "#00cd00"
+    elif 5 <= intensity <= 6:
+        return "#ffff00"
+    elif 7 <= intensity <= 8:
+        return "#ffa500"
+    elif intensity == 9:
+        return "#cd0000"
+    elif intensity == 10:
+        return "#8b0000"
+    else:
+        return "white"
+
+def duration_color(duration: int) -> str:
+    if 0 <= duration <= 45:
+        return "#caf0f8"
+    elif 45 < duration <= 90:
+        return "#90e0ef"
+    elif 90 < duration <= 120:
+        return "#00b4d8"
+    elif 120 < duration <= 150:
+        return "#0077b6"
+    elif 150 < duration:
+        return "#03045e"
+    else:
+        return "white"

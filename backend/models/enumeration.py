@@ -1,6 +1,8 @@
 from enum import Enum
 
-class Sport(Enum):
+class Sport(str, Enum):
+    Various = "Divers"
+    Mobilite = "Mobilité"
     Athletisme = "Athlétisme"
     Volleyball = "Volley-ball"
     

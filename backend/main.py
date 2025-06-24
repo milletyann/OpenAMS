@@ -1,7 +1,7 @@
 # backend/main.py
 from fastapi import FastAPI, Depends, HTTPException
 from sqlmodel import select, Session
-from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks
+from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance
 from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
@@ -110,3 +110,16 @@ def get_user_trainings(user_id: int, session: Session = Depends(get_session)):
     ).all()
     
     return trainings
+
+
+# === PERFORMANCE === #
+@app.post("/performances/")
+def create_performance(perf: Performance, session: Session = Depends(get_session)):
+    session.add(perf)
+    session.commit()
+    session.refresh(perf)
+    return perf
+
+@app.get("/performances/")
+def get_performances(session: Session = Depends(get_session)):
+    return session.exec(select(Performance)).all()

@@ -1,8 +1,11 @@
 # app/models/training.py
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import date
 from backend.models.enumeration import Sport
+
+if TYPE_CHECKING:
+    from backend.models.user import User
 
 class TrainingSession(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -35,4 +38,4 @@ class CoachTrainingLinks(SQLModel, table=True):
     training: "TrainingSession" = Relationship(back_populates="coaches")
 
 
-from backend.models.user import User  # Do this at the bottom
+#from backend.models.user import User  # Do this at the bottom

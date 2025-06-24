@@ -4,7 +4,6 @@ import requests
 
 API_URL = "http://127.0.0.1:8000"
 
-
 def user_tab():
     st.title("🏋️‍♂️ OpenAMS - Athlete Monitoring System")
 
@@ -21,7 +20,7 @@ def user_tab():
             "Rôle dans l'organisation",
             ("Athlète", "Coach"),
         )
-        age = st.number_input("Age", min_value=10, max_value=100)
+        age = st.number_input("Age", min_value=0, max_value=100)
         sexe = st.selectbox(
             "Sexe",
             ("M", "F", "Autre")
@@ -61,6 +60,8 @@ def user_tab():
                     delete_response = requests.delete(f"{API_URL}/users/{user['id']}")
                     if delete_response.status_code == 200:
                         st.success("Deleted successfully. Refresh to see changes.")
+                        st.cache_data.clear()
+                        st.rerun()
                     else:
                         st.error("Delete failed.")
     else:
@@ -103,5 +104,7 @@ def update_user(user):
             update_response = requests.put(f"{API_URL}/users/{user['id']}", json=update_payload)
             if update_response.status_code == 200:
                 st.success("Updated successfully. Refresh to see changes.")
+                st.cache_data.clear()
+                st.rerun()
             else:
                 st.error("Update failed.")
