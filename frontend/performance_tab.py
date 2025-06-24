@@ -53,6 +53,10 @@ def display_performances():
         with st.expander("Filters", expanded=True):
             col1, col2 = st.columns(2)
             
+            # Save old filter values from session state
+            previous_sport = st.session_state.get("previous_sport_filter", "Tous")
+            previous_discipline = st.session_state.get("previous_discipline_filter", "Toutes")
+            
             # --- Sport Filter ---
             with col1:
                 sport_filter = st.selectbox("Sport", ["Tous"] + sorted({p.sport.value for p in all_perfs}))
@@ -64,6 +68,14 @@ def display_performances():
                 else:
                     discipline_options = sorted({p.discipline for p in all_perfs if p.sport.value == sport_filter})
                 discipline_filter = st.selectbox("Discipline", ["Toutes"] + discipline_options)
+            
+            # Detect change and reset page if needed
+            if (sport_filter != previous_sport or discipline_filter != previous_discipline):
+                st.session_state["current_page"] = 1
+
+            # Store new filter values for next run
+            st.session_state["previous_sport_filter"] = sport_filter
+            st.session_state["previous_discipline_filter"] = discipline_filter
             
         # --- Apply filters ---
         query = select(Performance).where(Performance.user_id == selected_athlete_id)

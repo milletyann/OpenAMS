@@ -46,11 +46,22 @@ def display_trainings():
         # --- Base query ---
         base_query = select(TrainingSession).where(TrainingSession.id.in_(training_ids))
         all_sessions = session.exec(base_query).all()
-
+        
         # --- Build Filters ---
         with st.expander("Filters", expanded=True):
             col1, col2, col3 = st.columns(3)
-
+            
+            # Save previous filter values
+            previous_sport = st.session_state.get("selected_sport")
+            previous_type = st.session_state.get("selected_type")
+            previous_min_intensity = st.session_state.get("min_intensity")
+            previous_max_intensity = st.session_state.get("max_intensity")
+            previous_min_duration = st.session_state.get("min_duration")
+            previous_max_duration = st.session_state.get("max_duration")
+            previous_start_date = st.session_state.get("start_date")
+            previous_end_date = st.session_state.get("end_date")
+            previous_sort_by = st.session_state.get("selected_sort")
+            
             # Sport filter
             with col1:
                 selected_sport = st.selectbox(
@@ -64,7 +75,6 @@ def display_trainings():
 
             # Training types available for this sport only
             available_types = sorted(set(s.type for s in filtered_sessions))
-
             with col2:
                 selected_type = st.selectbox(
                     "Training Type",
@@ -88,7 +98,7 @@ def display_trainings():
                 start_date = st.date_input("Start Date", value=default_start)
 
             with col5:
-                end_date = st.date_input("End Date", value=default_end)  
+                end_date = st.date_input("End Date", value=default_end)
             
             # Duration range
             with col6:
@@ -104,8 +114,41 @@ def display_trainings():
                 }
                 selected_sort = st.selectbox("Sort Trainings By", options=list(sort_options.keys()))
                 reverse_sort = True  # All sorts are descending
+            
+                
+            # Detect change and reset page if needed
+            if (selected_sport != previous_sport
+                or selected_type != previous_type
+                or min_intensity != previous_min_intensity
+                or max_intensity != previous_max_intensity
+                or min_duration != previous_min_duration
+                or max_duration != previous_max_duration
+                or start_date != previous_start_date
+                or end_date != previous_end_date
+                or selected_sort != previous_sort_by
+                ):
+                st.session_state["current_page"] = 1
+            
+            # Store new filter values for next run
+            st.session_state["selected_sport"] = selected_sport
+            st.session_state["selected_type"] = selected_type
+            st.session_state["min_intensity"] = min_intensity
+            st.session_state["max_intensity"] = max_intensity
+            st.session_state["min_duration"] = min_duration
+            st.session_state["max_duration"] = max_duration
+            st.session_state["start_date"] = start_date
+            st.session_state["end_date"] = end_date
+            st.session_state["selected_sort"] = selected_sort
 
         # --- Apply filters ---
+        # selected_sport = st.session_state.selected_sport
+        # selected_type = st.session_state.selected_type
+        # min_intensity, max_intensity = st.session_state.intensity_range
+        # min_duration, max_duration = st.session_state.duration_range
+        # start_date = st.session_state.start_date
+        # end_date = st.session_state.end_date
+        # selected_sort = st.session_state.selected_sort
+        
         final_sessions = [
             s for s in filtered_sessions
             if (selected_type == "All" or s.type == selected_type)
@@ -124,7 +167,7 @@ def display_trainings():
         current_page = st.session_state.get("current_page", 1)
 
         if total_pages > 1:
-            st.markdown("---")  # subtle separation
+            st.markdown("---")
 
         # Display trainings
         start_idx = (current_page - 1) * sessions_per_page
