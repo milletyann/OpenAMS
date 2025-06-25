@@ -20,7 +20,7 @@ class ConditionMeteo(str, Enum):
 class Performance(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    date: date
+    date: str
     sport: Sport
     discipline: str
     performance: str

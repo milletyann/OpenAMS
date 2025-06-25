@@ -141,14 +141,6 @@ def display_trainings():
             st.session_state["selected_sort"] = selected_sort
 
         # --- Apply filters ---
-        # selected_sport = st.session_state.selected_sport
-        # selected_type = st.session_state.selected_type
-        # min_intensity, max_intensity = st.session_state.intensity_range
-        # min_duration, max_duration = st.session_state.duration_range
-        # start_date = st.session_state.start_date
-        # end_date = st.session_state.end_date
-        # selected_sort = st.session_state.selected_sort
-        
         final_sessions = [
             s for s in filtered_sessions
             if (selected_type == "All" or s.type == selected_type)
@@ -245,6 +237,10 @@ def add_training_session():
         # Autres attributs
         session_type = st.selectbox("Training Type", options=session_types[sport])
         training_date = st.date_input("Date", value=date.today())
+        
+        # if isinstance(training_date, str):
+        #     training_date = datetime.strptime(training_date, "%Y-%m-%d").date()
+        
         duration = st.number_input("Duration (minutes)", min_value=5, max_value=240, step=10)
         intensity = st.slider("Intensity", 1, 10)
         notes = st.text_area("Notes")
@@ -258,7 +254,6 @@ def add_training_session():
 
             # pas besoin de faire pareil avec les coach pcq coach n'est pas obligatoire
             else:
-                print(sport)
                 new_session = TrainingSession(
                     sport=sport,
                     type=session_type,

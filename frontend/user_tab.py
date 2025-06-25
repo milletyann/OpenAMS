@@ -68,7 +68,6 @@ def user_tab():
         st.error("Could not load athletes.")
 
 
-
 def update_user(user):
     with st.form(f"update_{user['id']}"):
         new_name = st.text_input("Name", value=user["name"], key=f"name_{user['id']}")

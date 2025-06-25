@@ -1,32 +1,188 @@
 # OpenAMS
 
-Open Source Athlete Monitoring System
+**OpenAMS** is a personal web application meant to store/display/manage/analyze all aspects of an athlete's journey (training, performance, health, sleep, nutrition, ...).  
+This is a **personal project** to organize my own practice, but most importantly a platform where I can collect and experiment Sport Data Science on my own data, which is why the web app in itself isn't sometimes optimally coded.
 
-This project is first aimed to serve as my training diary as well as for a personal platform for data science experiments.
+> ⚠️ This app is intended for **personal use only**, that's why there is **no user authentication**, **no data security**, and **no multi-user system**. It's not designed for deployment or public access. Keep that in mind if you want to use as well.
+
+---
+
+## Features Overview
+
+Here is an overview of the current features.
+
+### User Page
+
+Everything related to user (athlete or coach) entities:
+
+- Create new users (athlete or coach role)
+- Assign one sport to each user
+- Edit existing user information (there are still some bugs here, precisely in the gender modification that are not taken into account)
+- Delete users
+
+![Form to add a new user](illus/user_form.png "Form to add a new user")
+![List display of all users (first intended to check that it worked)](illus/user_display.png "Display of all users and modification form in expandable section")
+
+---
+
+### Training Management Page
+
+Keep track of all training sessions, linked to one or more athletes.
+
+- Create a training session with:
+  - Date
+  - Type (e.g., "Throws", "Sprint")
+  - Sport (e.g., "Athlétisme")
+  - Duration (in minutes)
+  - Intensity (scale 1–10)
+  - Notes
+- Assign the session to one or more athletes
+- Assign the session to one or none coach
+- View and filter past training sessions with:
+  - Sport
+  - Training type
+  - Intensity range
+  - Duration range
+  - Date range
+  - Sort by most recent / most intense / longest duration
+- Paginated display
+
+![Form for creating a training session](illus/create_training.png "Training creation form")
+![Filters to refine the search of trainings](illus/training_filters.png "Filters of the trainings display")
+![Colorful display of trainings with pagination](illus/paginated_training_display.png "Paginated display of trainings with color values")
+
+---
+
+### Performance Lab Page
+
+Keep track of performances in each sport and discipline.
+
+- Select a sport and discipline (e.g., "Athlétisme" → "100m")
+- Add a performance with:
+  - Date
+  - Result (mark)
+  - Unit (centimeters, seconds, points)
+  - Weather conditions
+  - Temperature (°C)
+  - Technical cues
+  - Physical cues
+  - Mental cues
+
+![Form to store a new performance](illus/create_performance.png "Performance creation form")
+![Filters to refine performance display](illus/performance_filters.png "Performance filters section")
+![Display of performances with filtering](illus/performance_display.png "Paginated display of performances")
+
+---
+
+## Setup Instructions
+
+This project uses a `requirements.txt` or `environment.yml` to manage dependencies.
+
+### Option 1: Using `requirements.txt`
+
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### Option 2: Using `requirements.yml`
+
+```bash
+conda env create -f environment.yml
+conda activate openams
+```
+
+## Running the app
+
+### Backend (FastAPI + SQLModel)
+
+The database (SQLite) and API logic.
+
+Go in the main folder of the project and run:
+
+```bash
+uvicorn backend.main:app --reload
+```
+
+Or go in the `backend` folder and run:
+
+```bash
+cd backend
+uvicorn main:app --reload
+```
+
+It will run on `http://127.0.0.1:8000`
+
+### Frontend (Streamlit)
+
+The user interface.
+
+Go in the main folder of the project and run:
+
+```bash
+streamlit run frontend/app.py
+```
+
+Or go in the `frontend` folder of the project and run:
+
+```bash
+cd frontend
+streamlit run app.py
+```
+
+## Tech Stack
+
+As I'm mainly a Python programmer, this tech stack was the easiest way for me to get a functional project as soon as possible.
+
+**Frontend:** Streamlit (Python)
+**Backend:** FastAPI, SQLModel (SQLAlchemy + Pydantic)
+**Database:** SQLite
+**Dev tools:** Uvicorn, Conda/Pip
+
+## Next improvements
+
+Features that I would like to implement later:
+
+Some improvements:
+
+- Layout of frontend: better color palette, display in blocks more than just all sections one after the other.
+- Fix bugs.
+- Add performance sorting in the display: sort by best to worst in a particular discipline, sort by most recent.
+- For track and field/athlétisme: convert each performance into points in the Hungarian table to be able to compare different events.
+- Add Personal Best calculation in the performance display (PB and FilterPB to know what is the PB and what is the PB in the conditions set through the filters).
+
+Bigger features:
+
+- Health section: recovery (basic recovery metrics or connected watch API), track injuries (open a ticket when it occurs and add news on it regularly).
+- Analytics section: data analysis of every data collected in the app: draw evolutions, compare periods of time of an athlete.
+- Nutrition: Yazio API (if it exists).
+- Calendar: schedule meetings/competitions/games to anticipate the work load + get reminders.
+- Data Science section (the initial purpose motivating this project): use the collected data to predict metrics (injuries, workload, recovery, performances, explaining factors).
 
 ## Code structure
 
 openams/\
 ├─── backend/\
-│ ├─── \_\_init\_\_.py\
-│ ├─── main.py\
-│ ├─── crud.py\
-│ ├─── database.py\
-│ ├─── data/\
-│ │ └── database.db\
+│ ├─── data *(not pushed, the code will create/load yours on startup)*
+│ │ └── database.db
 │ ├─── models/\
 │ │ ├── \_\_init\_\_.py\
-│ │ ├── athlete.py\
-│ │ └── training.py\
+│ │ ├── enumeration.py\
+│ │ ├── performance.py\
+│ │ ├── training.py\
+│ │ └── user.py\
+│ ├─── \_\_init\_\_.py\
+│ ├─── database.py\
+│ ├─── db\_modif\_dev.py\ *(dev code meant to update a db table when I add a field without deleting and recreating everything, can be useful if you modify the project. Run in in the main folder of the project)*
+│ ├─── main.py\
 ├─── frontend/\
 │ ├─── \_\_init\_\_.py\
 │ ├─── app.py\
-│ ├─── athlete_tab.py\
+│ ├─── helpers.py\
+│ ├─── performance_tab.py\
 │ └─── training_tab.py\
+│ ├─── user_tab.py\
 ├─── requirements.txt\
+├─── requirements.yml\
 └─── README.md\
-
-## Ideas draft
-
--> profils physiques sous forme de diagramme à 6 branches pour afficher les dominantes générales de l'athlètes, et un autre pour préciser les aptitudes en fonction du sport
-->
