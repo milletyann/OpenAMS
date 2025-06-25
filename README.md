@@ -93,18 +93,6 @@ Keep track of performances in each sport and discipline.
 
 ## Setup Instructions
 
-This project uses a `requirements.txt` or `environment.yml` to manage dependencies.
-
-### Option 1: Using `requirements.txt`
-
-```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-### Option 2: Using `requirements.yml`
-
 ```bash
 conda env create -f environment.yml
 conda activate openams

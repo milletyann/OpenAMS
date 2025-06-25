@@ -1,0 +1,20 @@
+name: openams
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - fastapi
+  - uvicorn
+  - sqlmodel
+  - sqlalchemy
+  - streamlit
+  - pandas
+  - numpy
+  - altair
+  - pydantic
+  - requests
+  - pip
+  - pip:
+      - streamlit-option-menu
+      - datetime
