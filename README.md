@@ -20,7 +20,12 @@ Everything related to user (athlete or coach) entities:
 - Edit existing user information (there are still some bugs here, precisely in the gender modification that are not taken into account)
 - Delete users
 
+---
+
 ![Form to add a new user](illus/user_form.png "Form to add a new user")
+
+---
+
 ![List display of all users (first intended to check that it worked)](illus/user_display.png "Display of all users and modification form in expandable section")
 
 ---
@@ -47,8 +52,16 @@ Keep track of all training sessions, linked to one or more athletes.
   - Sort by most recent / most intense / longest duration
 - Paginated display
 
+---
+
 ![Form for creating a training session](illus/create_training.png "Training creation form")
+
+---
+
 ![Filters to refine the search of trainings](illus/training_filters.png "Filters of the trainings display")
+
+---
+
 ![Colorful display of trainings with pagination](illus/paginated_training_display.png "Paginated display of trainings with color values")
 
 ---
@@ -68,7 +81,12 @@ Keep track of performances in each sport and discipline.
   - Physical cues
   - Mental cues
 
+---
+
 ![Form to store a new performance](illus/create_performance.png "Performance creation form")
+
+---
+
 ![Filters to refine performance display, and display](illus/performance_display.png "Performance filters and display section")
 
 ---
