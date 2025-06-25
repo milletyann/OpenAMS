@@ -69,8 +69,7 @@ Keep track of performances in each sport and discipline.
   - Mental cues
 
 ![Form to store a new performance](illus/create_performance.png "Performance creation form")
-![Filters to refine performance display](illus/performance_filters.png "Performance filters section")
-![Display of performances with filtering](illus/performance_display.png "Paginated display of performances")
+![Filters to refine performance display, and display](illus/performance_display.png "Performance filters and display section")
 
 ---
 
@@ -164,7 +163,7 @@ Bigger features:
 
 openams/\
 ├─── backend/\
-│ ├─── data *(not pushed, the code will create/load yours on startup)*
+│ ├─── data _(not pushed, the code will create/load yours on startup)_
 │ │ └── database.db
 │ ├─── models/\
 │ │ ├── \_\_init\_\_.py\
@@ -174,15 +173,17 @@ openams/\
 │ │ └── user.py\
 │ ├─── \_\_init\_\_.py\
 │ ├─── database.py\
-│ ├─── db\_modif\_dev.py\ *(dev code meant to update a db table when I add a field without deleting and recreating everything, can be useful if you modify the project. Run in in the main folder of the project)*
+│ ├─── db*modif_dev.py\ *(dev code meant to update a db table when I add a field without deleting and recreating everything, can be useful if you modify the project. Run in in the main folder of the project)\_
 │ ├─── main.py\
 ├─── frontend/\
 │ ├─── \_\_init\_\_.py\
 │ ├─── app.py\
 │ ├─── helpers.py\
 │ ├─── performance_tab.py\
-│ └─── training_tab.py\
-│ ├─── user_tab.py\
+│ ├─── training_tab.py\
+│ └─── user_tab.py\
+├─── illus/\
+│ └─── illustrations_of_readme.png\
 ├─── requirements.txt\
 ├─── requirements.yml\
 └─── README.md\
