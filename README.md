@@ -113,7 +113,6 @@ uvicorn backend.main:app --reload
 Or go in the `backend` folder and run:
 
 ```bash
-cd backend
 uvicorn main:app --reload
 ```
 
@@ -132,7 +131,6 @@ streamlit run frontend/app.py
 Or go in the `frontend` folder of the project and run:
 
 ```bash
-cd frontend
 streamlit run app.py
 ```
 
