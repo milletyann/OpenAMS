@@ -238,9 +238,6 @@ def add_training_session():
         session_type = st.selectbox("Training Type", options=session_types[sport])
         training_date = st.date_input("Date", value=date.today())
         
-        # if isinstance(training_date, str):
-        #     training_date = datetime.strptime(training_date, "%Y-%m-%d").date()
-        
         duration = st.number_input("Duration (minutes)", min_value=5, max_value=240, step=10)
         intensity = st.slider("Intensity", 1, 10)
         notes = st.text_area("Notes")
@@ -264,7 +261,7 @@ def add_training_session():
                     coach_id = None if selected_coach == "None" else coach_mapping[selected_coach]
                 )
                 session.add(new_session)
-                session.flush()  # get session.id before committing
+                session.flush()
 
                 # Link selected athletes
                 for name in selected_names:

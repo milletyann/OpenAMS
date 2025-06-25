@@ -5,10 +5,10 @@ import requests
 API_URL = "http://127.0.0.1:8000"
 
 def user_tab():
-    st.title("🏋️‍♂️ OpenAMS - Athlete Monitoring System")
+    st.title("OpenAMS - Athlete Monitoring System")
 
     # --- Create a new User ---
-    st.header("➕ Add New User")
+    st.header("Add New User")
 
     with st.form("user_form"):
         name = st.text_input("Name")
@@ -43,7 +43,7 @@ def user_tab():
                 st.error(f"Failed to add user: {response.text}")
 
     # --- Display all users ---
-    st.header("📋 Current Users")
+    st.header("Current Users")
 
     response = requests.get(f"{API_URL}/users/")
     if response.status_code == 200:

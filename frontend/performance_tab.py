@@ -21,7 +21,7 @@ unites = ["centimètres", "secondes", "points"]
 meteo_mapping = ["Canicule", "Soleil", "Nuageux", "Venteux", "Pluvieux", "Orageux", "Intérieur"]
 
 def performance_tab():
-    st.title("🏅 Performances Lab")
+    st.title("Performances Lab")
     display_performances()
     st.divider()
     add_performance()
@@ -32,7 +32,7 @@ def display_performances():
         # --- Athlete selector --- 
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
         athlete_options = {f"{a.name}": a.id for a in athletes}
-        selected_athlete_label = st.selectbox("👤 Sélectionnez un·e athlète", [""] + list(athlete_options.keys()))
+        selected_athlete_label = st.selectbox("Sélectionnez un·e athlète", [""] + list(athlete_options.keys()))
         selected_athlete_id = athlete_options.get(selected_athlete_label)
 
         if not selected_athlete_id:
@@ -133,7 +133,7 @@ def display_performances():
 
 def add_performance():
     # Enregistrer nouvelles performances
-    st.subheader("➕ Ajouter une performance")
+    st.subheader("Ajouter une performance")
     
     with Session(engine) as session:
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
@@ -169,8 +169,8 @@ def add_performance():
             }
             resp = requests.post(f"{API_URL}/performances/", json=payload)
             if resp.status_code == 200:
-                st.success("✅ Performance enregistrée avec succès !")
+                st.success("Performance enregistrée !")
                 st.cache_data.clear()
                 st.rerun()
             else:
-                st.error("❌ Échec de l'enregistrement.")
+                st.error("Échec de l'enregistrement.")

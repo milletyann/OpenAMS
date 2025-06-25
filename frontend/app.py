@@ -5,7 +5,7 @@ from user_tab import user_tab
 from performance_tab import performance_tab
 
 def main():
-    st.sidebar.title("OpenAMS")
+    st.sidebar.title("Menu")
 
     # Initialize session state for selected tab if not present
     if "selected_tab" not in st.session_state:
