@@ -2,5 +2,6 @@
 from .user import User, UserCreate
 from .training import TrainingSession, UserTrainingLinks
 from .performance import Performance
+from .health_check import HealthCheck
 
-__all__ = ["User", "UserCreate", "TrainingSession", "UserTrainingLinks", "Performance"]
+__all__ = ["User", "UserCreate", "TrainingSession", "UserTrainingLinks", "Performance", "HealthCheck"]

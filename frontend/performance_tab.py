@@ -24,8 +24,6 @@ def performance_tab():
     st.title("Performances Lab")
     display_performances()
     st.divider()
-    compute_performance_scoring()
-    st.divider()
     add_performance()
     
 def display_performances():    
@@ -132,9 +130,6 @@ def display_performances():
                     if cols[i].button(button_label, key=f"page_button_{page_num}"):
                         st.session_state["current_page"] = page_num
                         
-def compute_performance_scoring():
-    st.subheader("Hungarian Scoring Table")
-    
 
 def add_performance():
     # Enregistrer nouvelles performances

@@ -3,6 +3,7 @@ import streamlit as st
 from training_tab import training_tab
 from user_tab import user_tab
 from performance_tab import performance_tab
+from health_tab import health_tab
 
 def main():
     st.sidebar.title("Menu")
@@ -34,7 +35,7 @@ def main():
         performance_tab()
 
     elif selected_tab == "Health":
-        st.write("Health tab is under construction.")
+        health_tab()
 
     elif selected_tab == "Settings":
         st.write("Settings tab is under construction.")

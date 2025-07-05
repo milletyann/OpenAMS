@@ -1,17 +1,28 @@
 # backend/main.py
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select, Session
-from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance
+from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck
 from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
 
 app = FastAPI()
 
+# Allow frontend calls (adjust your frontend URL if different)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or restrict to your frontend domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Initialize the database when app starts
 @app.on_event("startup")
 def on_startup():
     init_db()
+
 
 
 # === USERS === #
@@ -123,3 +134,39 @@ def create_performance(perf: Performance, session: Session = Depends(get_session
 @app.get("/performances/")
 def get_performances(session: Session = Depends(get_session)):
     return session.exec(select(Performance)).all()
+
+
+# === HEALTH === #
+
+# CREATE HealthCheck
+@app.post("/health-checks/", response_model=HealthCheck)
+def create_health_check(health_check: HealthCheck, session: Session = Depends(get_session)):
+    # Check for duplicate record
+    statement = select(HealthCheck).where(
+        (HealthCheck.date == health_check.date) &
+        (HealthCheck.athlete_id == health_check.athlete_id)
+    )
+    existing = session.exec(statement).first()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="A health check already exists for this athlete on this date."
+        )
+    session.add(health_check)
+    session.commit()
+    session.refresh(health_check)
+    return health_check
+
+# GET all HealthChecks
+@app.get("/health-checks/", response_model=list[HealthCheck])
+def get_all_health_checks(session: Session = Depends(get_session)):
+    statement = select(HealthCheck)
+    results = session.exec(statement).all()
+    return results
+
+# GET HealthChecks for one athlete
+@app.get("/health-checks/by-athlete/{athlete_id}", response_model=list[HealthCheck])
+def get_health_checks_by_athlete(athlete_id: int, session: Session = Depends(get_session)):
+    statement = select(HealthCheck).where(HealthCheck.athlete_id == athlete_id)
+    results = session.exec(statement).all()
+    return results
