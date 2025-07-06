@@ -4,6 +4,8 @@ backend/__pycache__
 backend/__pycache__/*
 backend/models/__pycache__
 backend/models/__pycache__/*
+backend/assets/__pycache__/
+backend/assets/__pycache__/*
 
 
 frontend/__pycache__

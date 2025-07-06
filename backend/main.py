@@ -7,6 +7,9 @@ from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
 
+from pydantic import BaseModel
+from backend.assets.hungarian import compute_hungarian_score
+
 app = FastAPI()
 
 # Allow frontend calls (adjust your frontend URL if different)
@@ -22,8 +25,6 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
-
-
 
 # === USERS === #
 # --- Créer un.e user ---
@@ -147,9 +148,31 @@ def get_performances(session: Session = Depends(get_session)):
     return session.exec(select(Performance)).all()
 
 
-# === HEALTH === #
+class ScoreRequest(BaseModel):
+    event: str
+    sex: str
+    perf: float
 
-# CREATE HealthCheck
+class ScoreResponse(BaseModel):
+    score: int
+
+
+@app.post("/compute_hungarian_score", response_model=ScoreResponse)
+def compute_score_api(data: ScoreRequest):
+    try:
+        # For simplicity, assume only one performance
+        score = compute_hungarian_score(
+            event=data.event,
+            sex=data.sex,
+            perf=data.perf
+        )
+        return ScoreResponse(score=score)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+# === HEALTH === #
+# Créer un HealthCheck
 @app.post("/health-checks/", response_model=HealthCheck)
 def create_health_check(health_check: HealthCheck, session: Session = Depends(get_session)):
     # Check for duplicate record
@@ -168,14 +191,14 @@ def create_health_check(health_check: HealthCheck, session: Session = Depends(ge
     session.refresh(health_check)
     return health_check
 
-# GET all HealthChecks
+# Récupérer les HealthCheck
 @app.get("/health-checks/", response_model=list[HealthCheck])
 def get_all_health_checks(session: Session = Depends(get_session)):
     statement = select(HealthCheck)
     results = session.exec(statement).all()
     return results
 
-# GET HealthChecks for one athlete
+# Récupérer les HealthCheck d'un athlète précis
 @app.get("/health-checks/by-athlete/{athlete_id}", response_model=list[HealthCheck])
 def get_health_checks_by_athlete(athlete_id: int, session: Session = Depends(get_session)):
     statement = select(HealthCheck).where(HealthCheck.athlete_id == athlete_id)

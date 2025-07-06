@@ -37,54 +37,37 @@ throws = ['discus', 'javelin', 'shotput']
 jumps = ['longjump', 'highjump', 'polevault']
 races = ['60m', '60mH', '100m', '100mH', '110mH', '200m', '400m', '800m', '1000m', '1500m']
 
-def throw_score(perf, coefs):
-    a, b, c = coefs
-    # conversion de la perf en mètres
-    perf /= 100
-    # calcul de la perf
-    return int(np.floor(a*(perf-b)**c)), a*(perf-b)**c
+def compute_hungarian_score(event, sex, perf):
+    if sex == 'M':
+        coefs = men_ec[event]
+    elif sex == 'F':
+        coefs = women_ec[event]
 
-def jump_score(perf, coefs):
+    if event in throws:
+        perf /= 100
+    # À partir de là les distances sont en m pour les lancers, cm pour les sauts, et les temps sont en s
+    
     a, b, c = coefs
-    # perf en centimètres
-    # calcul de la perf
-    return int(np.floor(a*(perf-b)**c)), a*(perf-b)**c
-
-def race_score(perf, coefs):
-    a, b, c = coefs
-    # perf en secondes
-    return int(np.floor(a*(b-perf)**c)), a*(b - perf)**c
+    return int(np.floor(a*np.abs((perf-b))**c))#, a*(perf-b)**c
 
 
 # if __name__ == "__main__":
-#     # Créer un objet ArgumentParser
-#     parser = argparse.ArgumentParser(description='Un programme CLI qui prend deux strings et un float.')
+#     parser = argparse.ArgumentParser()
 
 #     # Ajouter les arguments
-#     parser.add_argument('sex', type=str, help='Premier argument de type string')
-#     parser.add_argument('event', type=str, help='Deuxième argument de type string')
-#     parser.add_argument('perf', type=float, help='Argument de type float')
+#     parser.add_argument('sex', type=str, help="Sexe de l'athlète")
+#     parser.add_argument('event', type=str, help="Discipline concernée")
+#     parser.add_argument('perf', type=float, help="Performance réalisée")
 
 #     # Analyser les arguments
 #     args = parser.parse_args()
     
-#     sex = args.sex
 #     event = args.event
+#     sex = args.sex
 #     perf = args.perf
-    
-#     if sex == 'M':
-#         coefs = men_ec[event]
-#     elif sex == 'F':
-#         coefs = women_ec[event]
 
-#     if event in throws:
-#         points = throw_score(perf, coefs)
-#     elif event in jumps:
-#         points = jump_score(perf, coefs)
-#     elif event in races:
-#         points = race_score(perf, coefs)
-        
-#     print(f"Coefficiens pour l'épreuve {event} ({sex}): {coefs}")
+#     points = compute_hungarian_score(event, sex, perf)
+    
 #     print(f"Pour la perf {perf}, cela vaut {points[0]} points!")
     
     

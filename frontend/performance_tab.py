@@ -17,12 +17,19 @@ sport_disciplines = {
     "Athlétisme": ["Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "Décathlon", "100m", "Longueur", "Poids", "Hauteur", "400m", "110mH", "Disque", "Perche", "Javelot", "1500m", "Heptathlon", "60m", "60mH", "1000m", "200m", "400mH", "800m", "3000m", "3000m Steeple", "5000m", "10k", "Semi-marathon", "Marathon", "Marteau", "Triple-Saut"],
     "Mobilité": ["GE Facial", "GE Frontal Gauche", "GE Frontal Droit", "Hand-to-toes"]
 }
+throws = ['discus', 'javelin', 'shotput']
+jumps = ['longjump', 'highjump', 'polevault']
+races = ['60m', '60mH', '100m', '100mH', '110mH', '200m', '400m', '800m', '1000m', '1500m']
+events_athle = throws + jumps + races
+
 unites = ["centimètres", "secondes", "points"]
 meteo_mapping = ["Canicule", "Soleil", "Nuageux", "Venteux", "Pluvieux", "Orageux", "Intérieur"]
 
 def performance_tab():
     st.title("Performances Lab")
     display_performances()
+    st.divider()
+    hungarian_table()
     st.divider()
     add_performance()
     
@@ -130,6 +137,46 @@ def display_performances():
                     if cols[i].button(button_label, key=f"page_button_{page_num}"):
                         st.session_state["current_page"] = page_num
                         
+def hungarian_table():
+    st.subheader("Decathlon Scoring Table")
+
+    # Discipline selection
+    discipline = st.selectbox(
+        "Select event",
+        events_athle
+    )
+
+    # Sex selection
+    sexe = st.selectbox(
+        "Select sex",
+        ["M", "F"]
+    )
+
+    # Dynamic fields
+    performance = {}
+
+    if discipline in jumps + throws:
+        distance = st.number_input("Distance (cm)", min_value=0.0)
+        performance = distance
+    
+    elif discipline in races:
+        time = st.number_input("Temps (s)", min_value=0.0)
+        performance = time
+
+    # Compute button
+    if st.button("Compute Score"):
+        payload = {
+            "event": discipline,
+            "sex": sexe,
+            "perf": performance
+        }
+        response = requests.post("http://localhost:8000/compute_hungarian_score/", json=payload)
+
+        if response.status_code == 200:
+            st.success(f"Score: {response.json()['score']}")
+        else:
+            st.error(f"Error: {response.json()['detail']}")
+
 
 def add_performance():
     # Enregistrer nouvelles performances
