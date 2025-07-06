@@ -108,6 +108,14 @@ Keep a daily morning health check (one entry per day, can't submit more than onc
 
 - View of the last 7 days of daily checks
 
+![Last 7 days health check](illus/lasy7daysHC.png "Last 7 days health check")
+
+---
+
+![Form to add a new daily health check](illus/form_daily_HC.png "Daily Health Check Form")
+
+---
+
 Future improvements:
 
 - customizable graphs and plots in dashboard display to better explore data (instead of last 7 days display)
