@@ -91,6 +91,29 @@ Keep track of performances in each sport and discipline.
 
 ---
 
+### Health Page
+
+Keep a daily morning health check (one entry per day, can't submit more than once for a date).
+
+- Add a daily update:
+
+  - muscle soreness
+  - sleep quality
+  - energy level
+  - mood
+  - resting heart rate
+  - grip strength test (recovery approximate)
+  - longest expiration test (recovery approximate)
+  - additional notes
+
+- View of the last 7 days of daily checks
+
+Future improvements:
+
+- customizable graphs and plots in dashboard display to better explore data (instead of last 7 days display)
+- ticket opening to track specific pain/injury (open an injury, add daily update about it, be able to close it if resolved)
+- view pain/injuries evolution with plots and graphs, sort them
+
 ## Setup Instructions
 
 ```bash
