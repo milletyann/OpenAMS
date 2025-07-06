@@ -13,16 +13,17 @@ API_URL = "http://localhost:8000"
 
 # --- Mapping ---
 sport_disciplines = {
-    "Volley-ball": ["Attaque", "Digs", "Recep", "Service - Ace", "Service - réussis", "Contre"],
     "Athlétisme": ["Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "Décathlon", "100m", "Longueur", "Poids", "Hauteur", "400m", "110mH", "Disque", "Perche", "Javelot", "1500m", "Heptathlon", "60m", "60mH", "1000m", "200m", "400mH", "800m", "3000m", "3000m Steeple", "5000m", "10k", "Semi-marathon", "Marathon", "Marteau", "Triple-Saut"],
+    "Volley-ball": ["Attaque", "Digs", "Recep", "Service - Ace", "Service - réussis", "Contre"],
     "Mobilité": ["GE Facial", "GE Frontal Gauche", "GE Frontal Droit", "Hand-to-toes"]
 }
-throws = ['discus', 'javelin', 'shotput']
-jumps = ['longjump', 'highjump', 'polevault']
+
+throws = ['Disque', 'Javelot', 'Poids']
+jumps = ['Longueur', 'Hauteur', 'Perche']
 races = ['60m', '60mH', '100m', '100mH', '110mH', '200m', '400m', '800m', '1000m', '1500m']
 events_athle = throws + jumps + races
 
-unites = ["centimètres", "secondes", "points"]
+unites = ["centimètres", "secondes", "points", "kg"]
 meteo_mapping = ["Canicule", "Soleil", "Nuageux", "Venteux", "Pluvieux", "Orageux", "Intérieur"]
 
 def performance_tab():
@@ -39,7 +40,7 @@ def display_performances():
         # --- Athlete selector --- 
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
         athlete_options = {f"{a.name}": a.id for a in athletes}
-        selected_athlete_label = st.selectbox("Sélectionnez un·e athlète", [""] + list(athlete_options.keys()))
+        selected_athlete_label = st.selectbox("Sélectionnez un·e athlète", [""] + list(athlete_options.keys()), key="athlete_selectbox")
         selected_athlete_id = athlete_options.get(selected_athlete_label)
 
         if not selected_athlete_id:
@@ -52,11 +53,11 @@ def display_performances():
         
         if not performances_ids:
             st.info("No performances found for this athlete.")
+            return
         
         base_query = select(Performance).where(Performance.id.in_(performances_ids))
         all_perfs = session.exec(base_query).all()
 
-        
         with st.expander("Filters", expanded=True):
             col1, col2 = st.columns(2)
             
@@ -66,7 +67,7 @@ def display_performances():
             
             # --- Sport Filter ---
             with col1:
-                sport_filter = st.selectbox("Sport", ["Tous"] + sorted({p.sport.value for p in all_perfs}))
+                sport_filter = st.selectbox("Sport", ["Tous"] + sorted({p.sport.value for p in all_perfs}), key="sport_filter_selectbox")
 
             # Discipline Filter
             with col2:
@@ -74,8 +75,19 @@ def display_performances():
                     discipline_options = sorted({p.discipline for p in all_perfs})
                 else:
                     discipline_options = sorted({p.discipline for p in all_perfs if p.sport.value == sport_filter})
-                discipline_filter = st.selectbox("Discipline", ["Toutes"] + discipline_options)
+                discipline_filter = st.selectbox("Discipline", ["Toutes"] + discipline_options, key="discipline_filter_selectbox")
             
+            # Filtre de tri par score
+            sort_by_score = "Décroissant"
+            if sport_filter == "Athlétisme":
+                sort_by_score = st.selectbox(
+                    "Trier",
+                    ["Score Décroissant", "Score Croissant"],
+                    key="sort_selectbox"
+                )
+            else:
+                sort_by_score = "Aucun"
+                
             # Detect change and reset page if needed
             if (sport_filter != previous_sport or discipline_filter != previous_discipline):
                 st.session_state["current_page"] = 1
@@ -92,7 +104,14 @@ def display_performances():
             query = query.where(Performance.discipline == discipline_filter)
 
         filtered_perfs = session.exec(query).all()
-
+        
+        # Trier les perfs
+        if sport_filter == "Athlétisme":
+            if sort_by_score == "Score Décroissant":
+                filtered_perfs.sort(key=lambda p: p.score or 0, reverse=True)
+            elif sort_by_score == "Score Croissant":
+                filtered_perfs.sort(key=lambda p: p.score or 0)
+        
         # --- Pagination ---
         performances_per_page = 6
         total_pages = (len(filtered_perfs) - 1) // performances_per_page + 1 if filtered_perfs else 1
@@ -101,28 +120,46 @@ def display_performances():
         if total_pages > 1:
             st.markdown("---")
         
-        start_idx = (current_page -1) * performances_per_page
+        start_idx = (current_page - 1) * performances_per_page
         end_idx = start_idx + performances_per_page
         performances_to_show = filtered_perfs[start_idx:end_idx]
         
         # Headers row
-        cols = st.columns([1, 1, 1, 1, 2, 2, 2])
-        headers = ['Date', 'Discipline', 'Performance', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
+        if sport_filter == "Athlétisme":
+            cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
+            headers = ['Date', 'Discipline', 'Performance', 'Score', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
+        else:
+            cols = st.columns([1, 1, 1, 1, 2, 2, 2])
+            headers = ['Date', 'Discipline', 'Performance', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
+
         for col, header in zip(cols, headers):
-            col.markdown(f"**{header}**")
+            col.markdown(f"<center><b>{header}</b></center>", unsafe_allow_html=True)
+            
+
         st.markdown("---")
         
         # Performances rows
         for perf_ in performances_to_show:
-            cols = st.columns([1, 1, 1, 1, 2, 2, 2])
-            cols[0].write(perf_.date)
-            cols[1].write(perf_.discipline)
-            cols[2].write(f"{perf_.performance} {perf_.unit}")
-            cols[3].write(f"{perf_.meteo.value} ({perf_.temperature}°C)")
-            cols[4].write(f"{clip_text(perf_.technical_cues, 100)}")
-            cols[5].write(f"{clip_text(perf_.physical_cues, 100)}")
-            cols[6].write(f"{clip_text(perf_.mental_cues, 100)}")
-        
+            if sport_filter == "Athlétisme":
+                cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
+                cols[0].write(perf_.date)
+                cols[1].write(perf_.discipline)
+                cols[2].write(f"{perf_.performance} {perf_.unit}")
+                cols[3].write(perf_.score or 0)
+                cols[4].write(f"{perf_.meteo.value} ({perf_.temperature}°C)")
+                cols[5].write(f"{clip_text(perf_.technical_cues, 100)}")
+                cols[6].write(f"{clip_text(perf_.physical_cues, 100)}")
+                cols[7].write(f"{clip_text(perf_.mental_cues, 100)}")
+            else:
+                cols = st.columns([1, 1, 1, 1, 2, 2, 2])
+                cols[0].write(perf_.date)
+                cols[1].write(perf_.discipline)
+                cols[2].write(f"{perf_.performance} {perf_.unit}")
+                cols[3].write(f"{perf_.meteo.value} ({perf_.temperature}°C)")
+                cols[4].write(f"{clip_text(perf_.technical_cues, 100)}")
+                cols[5].write(f"{clip_text(perf_.physical_cues, 100)}")
+                cols[6].write(f"{clip_text(perf_.mental_cues, 100)}")                
+                
         # --- Pagination control ---
         if total_pages > 1:
             st.write(f"Page {current_page} of {total_pages}")
@@ -156,7 +193,7 @@ def hungarian_table():
     performance = {}
 
     if discipline in jumps + throws:
-        distance = st.number_input("Distance (cm)", min_value=0.0)
+        distance = st.number_input("Distance (cm)", min_value=0.0, step=1.0)
         performance = distance
     
     elif discipline in races:
@@ -201,6 +238,34 @@ def add_performance():
 
         submitted = st.form_submit_button("Enregistrer")
         if submitted:
+            # GET THE SEX OF THE ATHLETE HERE (I GUESS?)
+            sex = selected_athlete.sexe.value
+            # COMPUTE THE SCORE HERE (WE HAVE THE DISCIPLINE, THE SEX AND THE PERFORMANCE)
+            if selected_discipline in events_athle:
+                score_payload = {
+                    "event": selected_discipline,
+                    "sex": sex,
+                    "perf": perf_mark
+                }
+
+                try:
+                    score_response = requests.post(
+                        f"{API_URL}/compute_hungarian_score/",
+                        json=score_payload
+                    )
+                    if score_response.status_code == 200:
+                        score = score_response.json().get("score", 0)
+                    else:
+                        st.error(f"Erreur calcul du score : {score_response.status_code} - {score_response.text}")
+                        score = 0
+                except Exception as e:
+                    st.error(f"Erreur lors de l'appel au calcul du score : {e}")
+                    score = 0
+
+            else:
+                score = 0
+            
+            
             payload = {
                 "user_id": selected_athlete.id,
                 "date": str(perf_date),
@@ -208,6 +273,7 @@ def add_performance():
                 "discipline": selected_discipline,
                 "performance": perf_mark,
                 "unit": perf_unit,
+                "score": score, # FILL THE SCORE VARIABLE HERE
                 "temperature": temperature,
                 "meteo": meteo,
                 "technical_cues": technique,
@@ -217,7 +283,8 @@ def add_performance():
             resp = requests.post(f"{API_URL}/performances/", json=payload)
             if resp.status_code == 200:
                 st.success("Performance enregistrée !")
-                st.cache_data.clear()
-                st.rerun()
+                st.info(f"Score calculé : {score}")
+                #st.cache_data.clear()
+                #st.rerun()
             else:
                 st.error("Échec de l'enregistrement.")

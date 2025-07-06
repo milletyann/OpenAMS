@@ -25,6 +25,7 @@ class Performance(SQLModel, table=True):
     discipline: str
     performance: str
     unit: str
+    score: float = Field(default=0)
     temperature: int
     meteo: ConditionMeteo
     technical_cues: Optional[str]

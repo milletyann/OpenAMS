@@ -15,9 +15,9 @@ def main():
     # Sidebar radio with session state syncing
     selected_tab = st.sidebar.radio(
         "Menu",
-        ("Athlete", "Training", "Performance", "Health", "Settings"),
-        index=["Athlete", "Training", "Performance", "Health", "Settings"].index(st.session_state.selected_tab),
-        key="sidebar_tabs",  # internal key for radio widget
+        ("Athlete", "Dashboard", "Training", "Performance", "Health", "Settings"),
+        index=["Athlete", "Dashboard", "Training", "Performance", "Health", "Settings"].index(st.session_state.selected_tab),
+        key="sidebar_tabs",
     )
     
     # Update session state when user changes tab
@@ -27,6 +27,9 @@ def main():
     # Display corresponding tab content
     if selected_tab == "Athlete":
         user_tab()
+        
+    elif selected_tab == "Dashboard":
+        st.write("L'onglet Dashboard est en construction.")
 
     elif selected_tab == "Training":
         training_tab()
@@ -38,7 +41,7 @@ def main():
         health_tab()
 
     elif selected_tab == "Settings":
-        st.write("Settings tab is under construction.")
+        st.write("L'onglet Settings est en construction.")
 
 if __name__ == "__main__":
     main()
