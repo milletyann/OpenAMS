@@ -2,7 +2,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select, Session
-from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck
+from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, CoachTrainingLinks
 from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
@@ -71,10 +71,21 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
     db_user = session.get(User, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # First delete CoachTrainingLinks where the user is a coach
+    session.query(CoachTrainingLinks).filter(
+        CoachTrainingLinks.coach_id == user_id
+    ).delete()
+    
+    # Optionally, delete UserTrainingLinks if needed:
+    session.query(UserTrainingLinks).filter(
+        UserTrainingLinks.user_id == user_id
+    ).delete()
 
     session.delete(db_user)
     session.commit()
     return {"message": "User deleted"}
+
 
 
 
