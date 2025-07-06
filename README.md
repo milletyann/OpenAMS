@@ -108,7 +108,7 @@ Keep a daily morning health check (one entry per day, can't submit more than onc
 
 - View of the last 7 days of daily checks
 
-![Last 7 days health check](illus/lasy7daysHC.png "Last 7 days health check")
+![Last 7 days health check](illus/last7daysHC.png "Last 7 days health check")
 
 ---
 
