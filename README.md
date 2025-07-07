@@ -71,6 +71,7 @@ Keep track of all training sessions, linked to one or more athletes.
 Keep track of performances in each sport and discipline.
 
 - Select a sport and discipline (e.g., "Athlétisme" → "100m")
+- Compute decathlon score (get the score of an athletics performance without adding a performance in the database).
 - Add a performance with:
   - Date
   - Result (mark)
@@ -81,9 +82,12 @@ Keep track of performances in each sport and discipline.
   - Physical cues
   - Mental cues
 
+For athletics, the score of the performance is calculated according to the IAAF formulaes. It is also possible to sort performances by score (increasing or decreasing).
 ---
 
-![Form to store a new performance](illus/create_performance.png "Performance creation form")
+![Compute Athletics Performance Score](illus/decathlon_table.png "IAAF Score Computation")
+![Form to store a new performance](illus/create_performance1.png "Performance creation form")
+![Form to store a new performance](illus/create_performance2.png "Performance creation form")
 
 ---
 
