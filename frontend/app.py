@@ -4,19 +4,21 @@ from training_tab import training_tab
 from user_tab import user_tab
 from performance_tab import performance_tab
 from health_tab import health_tab
+from dashboard_tab import dashboard_tab
+from settings import settings
 
 def main():
-    st.sidebar.title("Menu")
+    st.sidebar.title("OpenAMS")
 
     # Initialize session state for selected tab if not present
     if "selected_tab" not in st.session_state:
-        st.session_state.selected_tab = "Athlete"
+        st.session_state.selected_tab = "Athlète"
 
     # Sidebar radio with session state syncing
     selected_tab = st.sidebar.radio(
         "Menu",
-        ("Athlete", "Dashboard", "Training", "Performance", "Health", "Settings"),
-        index=["Athlete", "Dashboard", "Training", "Performance", "Health", "Settings"].index(st.session_state.selected_tab),
+        ("Athlète", "Tableau de bord", "Entraînement", "Performance", "Santé", "Paramètres"),
+        index=["Athlète", "Tableau de bord", "Entraînement", "Performance", "Santé", "Paramètres"].index(st.session_state.selected_tab),
         key="sidebar_tabs",
     )
     
@@ -25,23 +27,23 @@ def main():
         st.session_state.selected_tab = selected_tab
 
     # Display corresponding tab content
-    if selected_tab == "Athlete":
+    if selected_tab == "Athlète":
         user_tab()
         
-    elif selected_tab == "Dashboard":
-        st.write("L'onglet Dashboard est en construction.")
+    elif selected_tab == "Tableau de bord":
+        dashboard_tab()
 
-    elif selected_tab == "Training":
+    elif selected_tab == "Entraînement":
         training_tab()
         
     elif selected_tab == "Performance":
         performance_tab()
 
-    elif selected_tab == "Health":
+    elif selected_tab == "Santé":
         health_tab()
 
-    elif selected_tab == "Settings":
-        st.write("L'onglet Settings est en construction.")
+    elif selected_tab == "Paramètres":
+        settings()
 
 if __name__ == "__main__":
     main()

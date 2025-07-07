@@ -17,18 +17,19 @@ from backend.models.training import TrainingSession, UserTrainingLinks, CoachTra
 from datetime import date, timedelta
 
 def training_tab():
+    st.title("Entraînements")
     display_trainings()
     st.divider()
     add_training_session()
     
 def display_trainings():
-    st.title("Training History")
+    st.subheader("Historique des entraînements")
 
     with Session(engine) as session:
         # --- Select Athlete ---
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
         athlete_options = {f"{a.name}": a.id for a in athletes}
-        selected_name = st.selectbox("Select Athlete", options= [""] + list(athlete_options.keys()))
+        selected_name = st.selectbox("Sélectionner un athlète", options= [""] + list(athlete_options.keys()))
         athlete_id = athlete_options.get(selected_name)
         
         if not athlete_id:
@@ -40,7 +41,7 @@ def display_trainings():
         training_ids = [r for r in session.exec(link_query).all()]
 
         if not training_ids:
-            st.info("No training sessions found for this athlete.")
+            st.info("Aucun entraînement trouvé pour cet athlète.")
             return
 
         # --- Base query ---
@@ -48,7 +49,7 @@ def display_trainings():
         all_sessions = session.exec(base_query).all()
         
         # --- Build Filters ---
-        with st.expander("Filters", expanded=True):
+        with st.expander("Filtres", expanded=True):
             col1, col2, col3 = st.columns(3)
             
             # Save previous filter values
@@ -67,7 +68,7 @@ def display_trainings():
                 selected_sport = st.selectbox(
                     "Sport",
                     options=[None] + list(Sport),
-                    format_func=lambda x: x.value if x else "All Sports"
+                    format_func=lambda x: x.value if x else "Tous sports"
                 )
 
             # Filter training sessions by selected sport
@@ -77,14 +78,14 @@ def display_trainings():
             available_types = sorted(set(s.type for s in filtered_sessions))
             with col2:
                 selected_type = st.selectbox(
-                    "Training Type",
-                    options=["All"] + available_types
+                    "Type d'entraînement",
+                    options=["Tous"] + available_types
                 )
 
             # Intensity range
             with col3:
                 min_intensity, max_intensity = st.slider(
-                    "Intensity Range", 1, 10, (1, 10)
+                    "Intensité", 1, 10, (1, 10)
                 )
 
             col4, col5, col6 = st.columns(3)
@@ -95,24 +96,24 @@ def display_trainings():
             default_end = max(all_dates) if all_dates else date.today()
 
             with col4:
-                start_date = st.date_input("Start Date", value=default_start)
+                start_date = st.date_input("Date de début", value=default_start)
 
             with col5:
-                end_date = st.date_input("End Date", value=default_end)
+                end_date = st.date_input("Date de fin", value=default_end)
             
             # Duration range
             with col6:
                 min_duration, max_duration = st.slider(
-                    "Duration (min)", 5, 240, (5, 240), step=5
+                    "Durée (min)", 5, 240, (5, 240), step=5
                 )
             
             with st.container():
                 sort_options = {
-                    "Most Recent": lambda s: s.date,
-                    "Most Intense": lambda s: s.intensity,
-                    "Longest Duration": lambda s: s.duration_minutes,
+                    "Plus Récente": lambda s: s.date,
+                    "Plus Intense": lambda s: s.intensity,
+                    "Plus Longue": lambda s: s.duration_minutes,
                 }
-                selected_sort = st.selectbox("Sort Trainings By", options=list(sort_options.keys()))
+                selected_sort = st.selectbox("Trier les entraînements par", options=list(sort_options.keys()))
                 reverse_sort = True  # All sorts are descending
             
                 
@@ -143,7 +144,7 @@ def display_trainings():
         # --- Apply filters ---
         final_sessions = [
             s for s in filtered_sessions
-            if (selected_type == "All" or s.type == selected_type)
+            if (selected_type == "Tous" or s.type == selected_type)
             and (min_intensity <= s.intensity <= max_intensity)
             and (min_duration <= s.duration_minutes <= max_duration)
             and (start_date <= s.date <= end_date)
@@ -168,7 +169,7 @@ def display_trainings():
         
         # Headers row
         cols = st.columns([1, 1, 1, 1, 1, 2])  # width ratios
-        headers = ["Date", "Type", "Sport", "Duration", "Intensity", "Notes"]
+        headers = ["Date", "Type", "Sport", "Durée", "Intensité", "Notes"]
         for col, header in zip(cols, headers):
             col.markdown(f"**{header}**")
         st.markdown("---")  # separator below header# Rows: each training session
@@ -193,7 +194,7 @@ def display_trainings():
         
         # --- Pagination control with numbered buttons (bottom only) ---
         if total_pages > 1:
-            st.write(f"Page {current_page} of {total_pages}")
+            st.write(f"Page {current_page} sur {total_pages}")
 
             _, center_col, _ = st.columns([1, 1, 1])
             with center_col:
@@ -205,11 +206,8 @@ def display_trainings():
                     if cols[i].button(button_label, key=f"page_button_{page_num}"):
                         st.session_state["current_page"] = page_num
 
-def edit_training_session():
-    st.title("Edit Training Session")
-
 def add_training_session():
-    st.title("Create Training Session")
+    st.subheader("Créer un entraînement")
 
     # Types de séances selon le sport choisi
     session_types = {
@@ -226,28 +224,28 @@ def add_training_session():
         # Récup tous les athlètes
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
         athlete_options = {f"{a.name}": a.id for a in athletes}
-        selected_names = st.multiselect("Select Athletes", options=list(athlete_options.keys()))
+        selected_names = st.multiselect("Sélectionner des athlètes", options=list(athlete_options.keys()))
         
         # Récup tous les coachs
         coaches = session.exec(select(User).where(User.role == Role.Coach)).all()
         coach_mapping = {f"{c.name} ({c.sport.value})": c.id for c in coaches}
-        coach_display_options = ["None"] + list(coach_mapping.keys())
-        selected_coach = st.selectbox("Assign Coach", options=coach_display_options)
+        coach_display_options = ["Aucun"] + list(coach_mapping.keys())
+        selected_coach = st.selectbox("Désigner un coach", options=coach_display_options)
     
         # Autres attributs
-        session_type = st.selectbox("Training Type", options=session_types[sport])
+        session_type = st.selectbox("Type d'entraînement", options=session_types[sport])
         training_date = st.date_input("Date", value=date.today())
         
-        duration = st.number_input("Duration (minutes)", min_value=5, max_value=240, step=10)
-        intensity = st.slider("Intensity", 1, 10)
+        duration = st.number_input("Durée (minutes)", min_value=5, max_value=240, step=10)
+        intensity = st.slider("Intensité", 1, 10)
         notes = st.text_area("Notes")
 
 
-        if st.button("Create Training Session"):
+        if st.button("Créer un entraînement"):
             if not selected_names:
-                st.warning("Please select at least one athlete.")
+                st.warning("Veuillez sélectionner au moins un atlhète.")
             if not sport:
-                st.warning("Please select a sport.")
+                st.warning("Veuillez sélectionner un sport.")
 
             # pas besoin de faire pareil avec les coach pcq coach n'est pas obligatoire
             else:
@@ -258,7 +256,7 @@ def add_training_session():
                     date=training_date,
                     intensity=intensity,
                     notes=notes,
-                    coach_id = None if selected_coach == "None" else coach_mapping[selected_coach]
+                    coach_id = None if selected_coach == "Aucun" else coach_mapping[selected_coach]
                 )
                 session.add(new_session)
                 session.flush()
@@ -273,7 +271,7 @@ def add_training_session():
                     session.add(link)
                 
                 # Link selected coaches
-                if selected_coach != "None":
+                if selected_coach != "Aucun":
                     coach_id = coach_mapping[selected_coach]
                     link = CoachTrainingLinks(
                         coach_id=coach_id,
@@ -282,9 +280,10 @@ def add_training_session():
                     session.add(link)
 
                 session.commit()
-                st.success(f"Training session created and linked to {len(selected_names)} athletes.")
-                
-                
+                st.success(f"Entraînement créé et lié à {len(selected_names)} athlète(s).")
+
+def edit_training_session():
+    st.title("Modifier un entraînement")
                 
 ########################
 ### HELPER FUNCTIONS ###

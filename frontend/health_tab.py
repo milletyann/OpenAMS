@@ -1,5 +1,3 @@
-# frontend/health_page.py
-
 import streamlit as st
 from sqlmodel import Session, select
 import requests
@@ -9,10 +7,10 @@ from backend.models.enumeration import Role
 from backend.models.user import User
 from backend.database import engine
 
-API_URL = "http://localhost:8000"  # adjust to your backend
+API_URL = "http://localhost:8000"
 
 def health_tab():
-    st.title("Health")
+    st.title("Santé")
 
     display_health_check()
     st.divider()
@@ -35,12 +33,12 @@ def fetch_athletes():
         return []
 
 def display_health_check():
-    st.subheader("Morning Health Check - 7 derniers jours")
+    st.subheader("Check Santé Matinal - 7 derniers jours")
 
     athletes = fetch_athletes()
 
     if not athletes:
-        st.info("No athletes found.")
+        st.info("Aucun athlète trouvé.")
         return
 
     athlete_options = {athlete["name"]: athlete["id"] for athlete in athletes}
@@ -82,26 +80,26 @@ def display_health_check():
                 last_week = df[pd.to_datetime(df["date"], format="%d %B %Y") > (pd.Timestamp.today() - pd.Timedelta(days=7))]
                 
                 if last_week.empty:
-                    st.info("No health checks in the last 7 days for this athlete.")
+                    st.info("Aucun check santé dans les 7 derniers jours pour cet athlète.")
                 else:
                     st.dataframe(
                         last_week.sort_values("date", ascending=False),
                         use_container_width=True
                     )
         else:
-            st.error("Failed to fetch health checks.")
+            st.error("Impossible de récupérer les checks santé.")
     except Exception as e:
-        st.error(f"Request failed: {e}")
+        st.error(f"Requête échouée: {e}")
 
 
 
 def add_daily_health_check():
-    st.subheader("Add Daily Health Check")
+    st.subheader("Ajouter un check santé quotidien")
 
     athletes = fetch_athletes()
 
     if not athletes:
-        st.warning("No athletes found. Please create athletes first.")
+        st.warning("Aucun athlète trouvé. Veuillez d'abord créer un athlète.")
         return
 
     athlete_options = {athlete["name"]: athlete["id"] for athlete in athletes}
@@ -112,17 +110,17 @@ def add_daily_health_check():
         athlete_name = st.selectbox("Select athlete", list(athlete_options.keys()))
         athlete_id = athlete_options[athlete_name]
 
-        muscle_soreness = st.slider("Muscle Soreness (1-10)", 1, 10, 5)
-        sleep_quality = st.slider("Sleep Quality (1-10)", 1, 10, 5)
-        energy_level = st.slider("Energy Level (1-10)", 1, 10, 5)
+        muscle_soreness = st.slider("Fatigue Musculaire (1-10)", 1, 10, 5)
+        sleep_quality = st.slider("Qualité du sommeil (1-10)", 1, 10, 5)
+        energy_level = st.slider("Niveau d'énergie (1-10)", 1, 10, 5)
 
         mood = st.selectbox(
             "Mood",
-            ["Neutral", "Happy", "Sad", "Stressed", "Excited"]
+            ["Joyeux", "Enthousiasme", "Motivé", "Neutre", "Las", "Stressé", "Triste"]
         )
 
         resting_heart_rate = st.number_input(
-            "Resting Heart Rate (bpm)",
+            "Fréquence Cardiaque au repos (bpm)",
             min_value=0,
             step=1,
             format="%d",
@@ -130,14 +128,14 @@ def add_daily_health_check():
         )
 
         hand_grip_test = st.number_input(
-            "Hand Grip Test (kg)",
+            "Test du grip de main (kg)",
             min_value=0.0,
             format="%.1f",
             placeholder="Optional",
         )
 
         longest_expiration_test = st.number_input(
-            "Longest Expiration Test (s)",
+            "Test de la plus longue expiration (s)",
             min_value=0.0,
             format="%.1f",
             placeholder="Optional",
@@ -145,11 +143,11 @@ def add_daily_health_check():
 
         notes = st.text_area("Notes", placeholder="Optional")
 
-        submitted = st.form_submit_button("Submit")
+        submitted = st.form_submit_button("Soumettre")
 
         if submitted:
             if date_value > date.today():
-                st.error("The date cannot be in the future. Please select today or an earlier date.")
+                st.error("Impossible de choisir une date future. Choisissez une date antérieure ou aujourd'hui.")
             else:
                 payload = {
                     "date": str(date_value),
@@ -173,10 +171,10 @@ def add_daily_health_check():
                         json=payload
                     )
                     if response.status_code == 200:
-                        st.success("Health check submitted successfully.")
+                        st.success("Check santé enregistré avec succès.")
                     else:
-                        st.error(f"Error: {response.json().get('detail')}")
+                        st.error(f"Erreur: {response.json().get('detail')}")
                 except Exception as e:
-                    st.error(f"Request failed: {e}")
+                    st.error(f"Requête échouée: {e}")
 
 

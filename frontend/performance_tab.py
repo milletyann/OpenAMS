@@ -27,7 +27,7 @@ unites = ["centimètres", "secondes", "points", "kg"]
 meteo_mapping = ["Canicule", "Soleil", "Nuageux", "Venteux", "Pluvieux", "Orageux", "Intérieur"]
 
 def performance_tab():
-    st.title("Performances Lab")
+    st.title("Performance")
     display_performances()
     st.divider()
     hungarian_table()
@@ -35,7 +35,7 @@ def performance_tab():
     add_performance()
     
 def display_performances():    
-
+    st.subheader("Historique des performances")
     with Session(engine) as session:
         # --- Athlete selector --- 
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
@@ -52,13 +52,13 @@ def display_performances():
         performances_ids = [r.id for r in session.exec(query).all()]
         
         if not performances_ids:
-            st.info("No performances found for this athlete.")
+            st.info("Aucune performance n'a été trouvée pour cet athlète.")
             return
         
         base_query = select(Performance).where(Performance.id.in_(performances_ids))
         all_perfs = session.exec(base_query).all()
 
-        with st.expander("Filters", expanded=True):
+        with st.expander("Filtres", expanded=True):
             col1, col2 = st.columns(2)
             
             # Save old filter values from session state
@@ -162,7 +162,7 @@ def display_performances():
                 
         # --- Pagination control ---
         if total_pages > 1:
-            st.write(f"Page {current_page} of {total_pages}")
+            st.write(f"Page {current_page} sur {total_pages}")
             
             _, center_col, _ = st.columns([1, 1, 1])
             with center_col:
@@ -175,17 +175,17 @@ def display_performances():
                         st.session_state["current_page"] = page_num
                         
 def hungarian_table():
-    st.subheader("Decathlon Scoring Table")
+    st.subheader("Table des points Décathlon")
 
     # Discipline selection
     discipline = st.selectbox(
-        "Select event",
+        "Choisir une épreuve",
         events_athle
     )
 
     # Sex selection
     sexe = st.selectbox(
-        "Select sex",
+        "Choisir le sexe de l'athlète",
         ["M", "F"]
     )
 
@@ -201,7 +201,7 @@ def hungarian_table():
         performance = time
 
     # Compute button
-    if st.button("Compute Score"):
+    if st.button("Calculer le score"):
         payload = {
             "event": discipline,
             "sex": sexe,
@@ -212,8 +212,7 @@ def hungarian_table():
         if response.status_code == 200:
             st.success(f"Score: {response.json()['score']}")
         else:
-            st.error(f"Error: {response.json()['detail']}")
-
+            st.error(f"Erreur: {response.json()['detail']}")
 
 def add_performance():
     # Enregistrer nouvelles performances
