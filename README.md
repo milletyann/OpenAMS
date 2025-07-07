@@ -180,19 +180,18 @@ As I'm mainly a Python programmer, this tech stack was the easiest way for me to
 
 ## Next improvements
 
-Features that I would like to implement later:
+Features that I would like to implement in the future:
 
 Some improvements:
 
 - Layout of frontend: better color palette, display in blocks more than just all sections one after the other.
 - Fix bugs.
-- Add performance sorting in the display: sort by best to worst in a particular discipline, sort by most recent.
-- For track and field/athlétisme: convert each performance into points in the Hungarian table to be able to compare different events.
+- Add performance sorting in the display: sort by most recent.
 - Add Personal Best calculation in the performance display (PB and FilterPB to know what is the PB and what is the PB in the conditions set through the filters).
 
 Bigger features:
 
-- Health section: recovery (basic recovery metrics or connected watch API), track injuries (open a ticket when it occurs and add news on it regularly).
+- Health section: connected watch API to gather more complex data, track injuries (open a ticket when it occurs and add news on it regularly).
 - Analytics section: data analysis of every data collected in the app: draw evolutions, compare periods of time of an athlete.
 - Nutrition: Yazio API (if it exists).
 - Calendar: schedule meetings/competitions/games to anticipate the work load + get reminders.
