@@ -56,26 +56,36 @@ def compute_hungarian_score(event, sex, perf):
     # À partir de là les distances sont en m pour les lancers, cm pour les sauts, et les temps sont en s
     
     a, b, c = coefs
-    return int(np.floor(a*np.abs((perf-b))**c))
+    if event in throws+jumps:
+        if (perf - b) <= 0:
+            # la perf est trop mauvaise pour valoir des points
+            return 0
+        return int(np.floor(a*(perf-b)**c))
+    elif event in races:
+        if (b - perf) <= 0:
+            # la perf est trop mauvaise pour valoir des points
+            return 0
+        return int(np.floor(a*(b-perf)**c))
+        
 
 
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
 
-#     # Ajouter les arguments
-#     parser.add_argument('sex', type=str, help="Sexe de l'athlète")
-#     parser.add_argument('event', type=str, help="Discipline concernée")
-#     parser.add_argument('perf', type=float, help="Performance réalisée")
+    # Ajouter les arguments
+    parser.add_argument('sex', type=str, help="Sexe de l'athlète")
+    parser.add_argument('event', type=str, help="Discipline concernée")
+    parser.add_argument('perf', type=float, help="Performance réalisée")
 
-#     # Analyser les arguments
-#     args = parser.parse_args()
+    # Analyser les arguments
+    args = parser.parse_args()
     
-#     event = args.event
-#     sex = args.sex
-#     perf = args.perf
+    event = args.event
+    sex = args.sex
+    perf = args.perf
 
-#     points = compute_hungarian_score(event, sex, perf)
+    points = compute_hungarian_score(event, sex, perf)
     
-#     print(f"Pour la perf {perf}, cela vaut {points[0]} points!")
+    print(f'{perf}: {points}')
     
     
