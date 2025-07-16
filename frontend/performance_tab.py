@@ -78,17 +78,17 @@ def display_performances():
                 discipline_filter = st.selectbox("Discipline", ["Toutes"] + discipline_options, key="discipline_filter_selectbox")
             
             # Filtre de tri par score
-            sort_by = "Date Décroissante"
+            sort_by = "Plus Récent"
             if sport_filter == "Athlétisme":
                 sort_by = st.selectbox(
                     "Trier",
-                    ["Date Décroissante", "Date Croissante", "Score Décroissant", "Score Croissant"],
+                    ["Plus Récent", "Plus Ancien", "Meilleur Score", "Pire Score"],
                     key="sort_selectbox"
                 )
             else:
                 sort_by = st.selectbox(
                     "Trier",
-                    ["Date Décroissante", "Date Croissante"],
+                    ["Plus Récent", "Plus Ancien"],
                     key="sort_selectbox_other"
                 )
             
@@ -110,13 +110,13 @@ def display_performances():
         filtered_perfs = session.exec(query).all()
         
         # Trier les perfs
-        if sort_by == "Date Décroissante":
+        if sort_by == "Plus Récent":
             filtered_perfs.sort(key=lambda p: p.date or datetime.min, reverse=True)
-        elif sort_by == "Date Croissante":
+        elif sort_by == "Plus Ancien":
             filtered_perfs.sort(key=lambda p: p.date or datetime.min)
-        elif sort_by == "Score Décroissant":
+        elif sort_by == "Meilleur Score":
             filtered_perfs.sort(key=lambda p: p.score or 0, reverse=True)
-        elif sort_by == "Score Croissant":
+        elif sort_by == "Pire Score":
             filtered_perfs.sort(key=lambda p: p.score or 0)
         
         # --- Pagination ---

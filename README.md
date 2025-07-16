@@ -186,7 +186,6 @@ Some improvements:
 
 - Layout of frontend: better color palette, display in blocks more than just all sections one after the other.
 - Fix bugs.
-- Add performance sorting in the display: sort by most recent.
 - Add Personal Best calculation in the performance display (PB and FilterPB to know what is the PB and what is the PB in the conditions set through the filters).
 
 Bigger features:
