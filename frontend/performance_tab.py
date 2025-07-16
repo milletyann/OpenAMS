@@ -78,16 +78,20 @@ def display_performances():
                 discipline_filter = st.selectbox("Discipline", ["Toutes"] + discipline_options, key="discipline_filter_selectbox")
             
             # Filtre de tri par score
-            sort_by_score = "Décroissant"
+            sort_by = "Date Décroissante"
             if sport_filter == "Athlétisme":
-                sort_by_score = st.selectbox(
+                sort_by = st.selectbox(
                     "Trier",
-                    ["Score Décroissant", "Score Croissant"],
+                    ["Date Décroissante", "Date Croissante", "Score Décroissant", "Score Croissant"],
                     key="sort_selectbox"
                 )
             else:
-                sort_by_score = "Aucun"
-                
+                sort_by = st.selectbox(
+                    "Trier",
+                    ["Date Décroissante", "Date Croissante"],
+                    key="sort_selectbox_other"
+                )
+            
             # Detect change and reset page if needed
             if (sport_filter != previous_sport or discipline_filter != previous_discipline):
                 st.session_state["current_page"] = 1
@@ -106,11 +110,14 @@ def display_performances():
         filtered_perfs = session.exec(query).all()
         
         # Trier les perfs
-        if sport_filter == "Athlétisme":
-            if sort_by_score == "Score Décroissant":
-                filtered_perfs.sort(key=lambda p: p.score or 0, reverse=True)
-            elif sort_by_score == "Score Croissant":
-                filtered_perfs.sort(key=lambda p: p.score or 0)
+        if sort_by == "Date Décroissante":
+            filtered_perfs.sort(key=lambda p: p.date or datetime.min, reverse=True)
+        elif sort_by == "Date Croissante":
+            filtered_perfs.sort(key=lambda p: p.date or datetime.min)
+        elif sort_by == "Score Décroissant":
+            filtered_perfs.sort(key=lambda p: p.score or 0, reverse=True)
+        elif sort_by == "Score Croissant":
+            filtered_perfs.sort(key=lambda p: p.score or 0)
         
         # --- Pagination ---
         performances_per_page = 6

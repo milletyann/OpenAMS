@@ -18,19 +18,21 @@ men_ec = {
 }
 
 women_ec = {
-    "200m": [4.99087, 42.50, 1.81],
-    "800m": [0.11193, 254.00, 1.88],
-    "100mH": [9.23076, 26.70, 1.835],
-    "Hauteur": [1.84523, 75.00, 1.348],
+    "100m": [17.8570, 21.0, 1.81],
     "Longueur": [0.188807, 210.00, 1.41],
     "Poids": [56.0211, 1.50, 1.05],
-    "Javelot": [15.9803, 3.80, 1.04],
-    "100m": [17.8570, 21.0, 1.81],
+    "Hauteur": [1.84523, 75.00, 1.348],
     "400m": [1.34285, 91.7, 1.81],
-    "1500m": [0.02883, 535, 1.88],
-    "Perche": [0.44125, 100, 1.35],
+    "100mH": [9.23076, 26.70, 1.835],
     "Disque": [12.3311, 3.00, 1.10],
+    "Perche": [0.44125, 100, 1.35],
+    "Javelot": [15.9803, 3.80, 1.04],
     "60mH": [20.0479, 17.00, 1.835],
+    "1500m": [0.02883, 535, 1.88],
+    "200m": [4.99087, 42.50, 1.81],
+    "800m": [0.11193, 254.00, 1.88],
+    "60m": [46.0849, 13.0, 1.81],
+    "1000m": [0.07068, 337.0, 1.88],
 }
 
 throws = ['Disque', 'Javelot', 'Poids']
@@ -56,7 +58,7 @@ def compute_hungarian_score(event, sex, perf):
     # À partir de là les distances sont en m pour les lancers, cm pour les sauts, et les temps sont en s
     
     a, b, c = coefs
-    if event in throws+jumps:
+    if (event in throws) or (event in jumps):
         if (perf - b) <= 0:
             # la perf est trop mauvaise pour valoir des points
             return 0
