@@ -213,7 +213,7 @@ def display_performances():
                                     <td style="padding: 4px; width: 8%;">{perf_.date}</td>
                                     <td style="padding: 4px; width: 8%;">{perf_.discipline}</td>
                                     <td style="padding: 4px; width: 12%;">{perf_.performance} {perf_.unit}{pb_icon}</td>
-                                    <td style="padding: 4px; width: 8%; color:{color_score}; font-weight:bold; background: lightgrey; text-align:center; border-radius:8px; opacity: 0.7;">{perf_.score or 0}</td>
+                                    <td style="padding: 4px; width: 8%; color:{color_score}; font-weight:bold; background: white; text-align:center; border-radius:8px; opacity: 0.8;">{perf_.score or 0}</td>
                                     <td style="padding: 4px; width: 16%;">{perf_.meteo.value} ({perf_.temperature}°C)</td>
                                     <td style="padding: 4px; width: 16%;">{clip_text(perf_.technical_cues, 100)}</td>
                                     <td style="padding: 4px; width: 16%;">{clip_text(perf_.physical_cues, 100)}</td>
