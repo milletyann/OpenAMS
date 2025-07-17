@@ -7,7 +7,6 @@ import requests
 from helpers import *
 
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
-st.set_page_config(layout="wide") # Pourquoi ici seulement et ça marche partout??
 API_URL = "http://127.0.0.1:8000"
 
 from backend.database import engine

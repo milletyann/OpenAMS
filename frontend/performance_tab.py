@@ -82,18 +82,11 @@ def display_performances():
             
             # Filtre de tri par score
             sort_by = "Plus Récent"
-            if sport_filter == "Athlétisme":
-                sort_by = st.selectbox(
-                    "Trier",
-                    ["Plus Récent", "Plus Ancien", "Meilleur Score", "Pire Score"],
-                    key="sort_selectbox"
-                )
-            else:
-                sort_by = st.selectbox(
-                    "Trier",
-                    ["Plus Récent", "Plus Ancien"],
-                    key="sort_selectbox_other"
-                )
+            sort_by = st.selectbox(
+                "Trier",
+                ["Plus Récent", "Plus Ancien", "Meilleur Score", "Pire Score"],
+                key="sort_selectbox"
+            )
             
             # Detect change and reset page if needed
             if (sport_filter != previous_sport or discipline_filter != previous_discipline):
@@ -110,16 +103,10 @@ def display_performances():
         if discipline_filter != "Toutes":
             query = query.where(Performance.discipline == discipline_filter)
 
-        filtered_perfs = session.exec(query).all()
+        all_perfs = session.exec(query).all()
         
         # --- Calculate PBs ---
         pbs_per_discipline = {}
-        all_perfs = session.exec(
-            select(Performance)
-            .where(Performance.user_id == selected_athlete_id)
-            .where(Performance.sport == sport_filter)
-        ).all()
-        
         discipline_groups = {}
         for perf in all_perfs:
             discipline_groups.setdefault(perf.discipline, []).append(perf)
@@ -138,17 +125,17 @@ def display_performances():
         
         # Trier les perfs
         if sort_by == "Plus Récent":
-            filtered_perfs.sort(key=lambda p: p.date or datetime.min, reverse=True)
+            all_perfs.sort(key=lambda p: p.date or datetime.min, reverse=True)
         elif sort_by == "Plus Ancien":
-            filtered_perfs.sort(key=lambda p: p.date or datetime.min)
+            all_perfs.sort(key=lambda p: p.date or datetime.min)
         elif sort_by == "Meilleur Score":
-            filtered_perfs.sort(key=lambda p: p.score or 0, reverse=True)
+            all_perfs.sort(key=lambda p: p.score or 0, reverse=True)
         elif sort_by == "Pire Score":
-            filtered_perfs.sort(key=lambda p: p.score or 0)
+            all_perfs.sort(key=lambda p: p.score or 0)
         
         # --- Pagination ---
         performances_per_page = 6
-        total_pages = (len(filtered_perfs) - 1) // performances_per_page + 1 if filtered_perfs else 1
+        total_pages = (len(all_perfs) - 1) // performances_per_page + 1 if all_perfs else 1
         current_page = st.session_state.get("current_page", 1)
         
         if total_pages > 1:
@@ -156,15 +143,34 @@ def display_performances():
         
         start_idx = (current_page - 1) * performances_per_page
         end_idx = start_idx + performances_per_page
-        performances_to_show = filtered_perfs[start_idx:end_idx]
+        performances_to_show = all_perfs[start_idx:end_idx]
         
         # Headers row
-        cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
-        headers = ['Date', 'Discipline', 'Performance', 'Score', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
+        #cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
+        #headers = ['Date', 'Discipline', 'Performance', 'Score', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
 
-        for col, header in zip(cols, headers):
-            col.markdown(f"<center><b>{header}</b></center>", unsafe_allow_html=True)
+        #for col, header in zip(cols, headers):
+        #    col.markdown(f"<center><b>{header}</b></center>", unsafe_allow_html=True)
             
+        headers = f"""
+            <div style="
+                margin: 5px;
+            ">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <tr>
+                        <td style="padding: 4px; width: 8%;"><center><b>Date</b></center></td>
+                        <td style="padding: 4px; width: 8%;"><center><b>Discipline</b></center></td>
+                        <td style="padding: 4px; width: 12%;"><center><b>Performance</b></center></td>
+                        <td style="padding: 4px; width: 8%;"><center><b>Score</b></center></td>
+                        <td style="padding: 4px; width: 16%;"><center><b>Météo</b></center></td>
+                        <td style="padding: 4px; width: 16%;"><center><b>Remarques Techniques</b></center></td>
+                        <td style="padding: 4px; width: 16%;"><center><b>Remarques Physiques</b></center></td>
+                        <td style="padding: 4px; width: 16%;"><center><b>Remarques Mentales</b></center></td>
+                    </tr>
+                </table>
+            </div>
+        """
+        st.markdown(headers, unsafe_allow_html=True)
 
         st.markdown("---")
         
@@ -173,55 +179,50 @@ def display_performances():
             # Check if PB
             is_pb = False
             pb_icon = ""
-            if sport_filter == "Athlétisme":
-                pb_value = pbs_per_discipline.get(perf_.discipline)
-                if pb_value is not None and perf_.performance == pb_value:
-                    is_pb = True
-                    pb_icon = "<br><span style='color:gold;'>🏅<b>PB</b></span>"
+            pb_value = pbs_per_discipline.get(perf_.discipline)
+            if pb_value is not None and perf_.performance == pb_value:
+                is_pb = True
+                pb_icon = "<br><span style='color:gold;'>🏅<b>PB</b></span>"
 
-            # PB cell design
-            color_score = score_color(perf_.score)
             if is_pb:
+                # PB row design
                 row_html = f"""
                             <div style="
-                                background-color: white;
+                                background-color: #fff2cc;
                                 border: 2px solid gold;
                                 border-radius: 6px;
-                                padding: 10px;
-                                margin-bottom: 5px;
+                                margin: 5px;
                                 opacity: 0.9;
-                            ">
-                                <table style="width: 100%; border-collapse: collapse;">
-                                    <tr>
-                                        <td style="padding: 4px; width: 8%; color: black;">{perf_.date}</td>
-                                        <td style="padding: 4px; width: 8%; color: black;">{perf_.discipline}</td>
-                                        <td style="padding: 4px; width: 10%; color: black;">{perf_.performance} {perf_.unit}{pb_icon}</td>
-                                        <td style="padding: 4px; width: 8%; color:{color_score}; font-weight:bold;">{perf_.score or 0}</td>
-                                        <td style="padding: 4px; width: 16%; color: black;">{perf_.meteo.value} ({perf_.temperature}°C)</td>
-                                        <td style="padding: 4px; width: 16%; color: black;">{clip_text(perf_.technical_cues, 100)}</td>
-                                        <td style="padding: 4px; width: 16%; color: black;">{clip_text(perf_.physical_cues, 100)}</td>
-                                        <td style="padding: 4px; width: 16%; color: black;">{clip_text(perf_.mental_cues, 100)}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                            """
-                st.markdown(row_html, unsafe_allow_html=True)
+                                color: black;
+                            ">"""
                         
             else:
                 # Normal row rendering for non-PB
-                cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
-                cols[0].write(perf_.date)
-                cols[1].write(perf_.discipline)
-                cols[2].write(f"{perf_.performance} {perf_.unit}")
-                cols[3].markdown(
-                    f'<span style="color:{color_score}; font-weight:bold; background: lightgrey; padding:5px; border-radius:5px;">{perf_.score or 0}</span>',
-                    unsafe_allow_html=True,
-                )
-                cols[4].write(f"{perf_.meteo.value} ({perf_.temperature}°C)")
-                cols[5].write(f"{clip_text(perf_.technical_cues, 100)}")
-                cols[6].write(f"{clip_text(perf_.physical_cues, 100)}")
-                cols[7].write(f"{clip_text(perf_.mental_cues, 100)}")
-                
+                row_html = f"""
+                            <div style="
+                                border: none;
+                                border-radius: 6px;
+                                margin: 5px;
+                                opacity: 0.9;
+                                color: white;
+                            ">"""
+            color_score = score_color(perf_.score)
+            row_html += f"""
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="padding: 4px; width: 8%;">{perf_.date}</td>
+                                    <td style="padding: 4px; width: 8%;">{perf_.discipline}</td>
+                                    <td style="padding: 4px; width: 12%;">{perf_.performance} {perf_.unit}{pb_icon}</td>
+                                    <td style="padding: 4px; width: 8%; color:{color_score}; font-weight:bold; background: lightgrey; text-align:center; border-radius:8px; opacity: 0.7;">{perf_.score or 0}</td>
+                                    <td style="padding: 4px; width: 16%;">{perf_.meteo.value} ({perf_.temperature}°C)</td>
+                                    <td style="padding: 4px; width: 16%;">{clip_text(perf_.technical_cues, 100)}</td>
+                                    <td style="padding: 4px; width: 16%;">{clip_text(perf_.physical_cues, 100)}</td>
+                                    <td style="padding: 4px; width: 16%;">{clip_text(perf_.mental_cues, 100)}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    """
+            st.markdown(row_html, unsafe_allow_html=True)
             
 
         # --- Pagination control ---

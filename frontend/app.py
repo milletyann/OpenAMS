@@ -1,5 +1,6 @@
-# frontend/app.py
 import streamlit as st
+st.set_page_config(layout="wide")
+
 from training_tab import training_tab
 from user_tab import user_tab
 from performance_tab import performance_tab
