@@ -23,6 +23,9 @@ jumps = ['Longueur', 'Hauteur', 'Perche']
 races = ['60m', '60mH', '100m', '100mH', '110mH', '200m', '400m', '800m', '1000m', '1500m']
 events_athle = throws + jumps + races
 
+disciplines_to_min = races + sport_disciplines['Volley-ball']
+disciplines_to_max = jumps + throws + sport_disciplines['Mobilité']
+
 unites = ["centimètres", "secondes", "points", "kg"]
 meteo_mapping = ["Canicule", "Soleil", "Nuageux", "Venteux", "Pluvieux", "Orageux", "Intérieur"]
 
@@ -109,6 +112,30 @@ def display_performances():
 
         filtered_perfs = session.exec(query).all()
         
+        # --- Calculate PBs ---
+        pbs_per_discipline = {}
+        all_perfs = session.exec(
+            select(Performance)
+            .where(Performance.user_id == selected_athlete_id)
+            .where(Performance.sport == sport_filter)
+        ).all()
+        
+        discipline_groups = {}
+        for perf in all_perfs:
+            discipline_groups.setdefault(perf.discipline, []).append(perf)
+        
+        for discipline, perfs in discipline_groups.items():
+            valid_perfs = [p for p in perfs if p.performance is not None]
+            if not valid_perfs:
+                continue
+            
+            if discipline in disciplines_to_min:
+                best_perf = min(valid_perfs, key=lambda p: p.performance)
+            elif discipline in disciplines_to_max:
+                best_perf = max(valid_perfs, key=lambda p: p.performance)
+            
+            pbs_per_discipline[discipline] = best_perf.performance
+        
         # Trier les perfs
         if sort_by == "Plus Récent":
             filtered_perfs.sort(key=lambda p: p.date or datetime.min, reverse=True)
@@ -132,12 +159,8 @@ def display_performances():
         performances_to_show = filtered_perfs[start_idx:end_idx]
         
         # Headers row
-        if sport_filter == "Athlétisme":
-            cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
-            headers = ['Date', 'Discipline', 'Performance', 'Score', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
-        else:
-            cols = st.columns([1, 1, 1, 1, 2, 2, 2])
-            headers = ['Date', 'Discipline', 'Performance', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
+        cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
+        headers = ['Date', 'Discipline', 'Performance', 'Score', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
 
         for col, header in zip(cols, headers):
             col.markdown(f"<center><b>{header}</b></center>", unsafe_allow_html=True)
@@ -147,26 +170,60 @@ def display_performances():
         
         # Performances rows
         for perf_ in performances_to_show:
+            # Check if PB
+            is_pb = False
+            pb_icon = ""
             if sport_filter == "Athlétisme":
+                pb_value = pbs_per_discipline.get(perf_.discipline)
+                if pb_value is not None and perf_.performance == pb_value:
+                    is_pb = True
+                    pb_icon = "<br><span style='color:gold;'>🏅<b>PB</b></span>"
+
+            # PB cell design
+            color_score = score_color(perf_.score)
+            if is_pb:
+                row_html = f"""
+                            <div style="
+                                background-color: white;
+                                border: 2px solid gold;
+                                border-radius: 6px;
+                                padding: 10px;
+                                margin-bottom: 5px;
+                                opacity: 0.9;
+                            ">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 4px; width: 8%; color: black;">{perf_.date}</td>
+                                        <td style="padding: 4px; width: 8%; color: black;">{perf_.discipline}</td>
+                                        <td style="padding: 4px; width: 10%; color: black;">{perf_.performance} {perf_.unit}{pb_icon}</td>
+                                        <td style="padding: 4px; width: 8%; color:{color_score}; font-weight:bold;">{perf_.score or 0}</td>
+                                        <td style="padding: 4px; width: 16%; color: black;">{perf_.meteo.value} ({perf_.temperature}°C)</td>
+                                        <td style="padding: 4px; width: 16%; color: black;">{clip_text(perf_.technical_cues, 100)}</td>
+                                        <td style="padding: 4px; width: 16%; color: black;">{clip_text(perf_.physical_cues, 100)}</td>
+                                        <td style="padding: 4px; width: 16%; color: black;">{clip_text(perf_.mental_cues, 100)}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            """
+                st.markdown(row_html, unsafe_allow_html=True)
+                        
+            else:
+                # Normal row rendering for non-PB
                 cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
                 cols[0].write(perf_.date)
                 cols[1].write(perf_.discipline)
                 cols[2].write(f"{perf_.performance} {perf_.unit}")
-                cols[3].write(perf_.score or 0)
+                cols[3].markdown(
+                    f'<span style="color:{color_score}; font-weight:bold; background: lightgrey; padding:5px; border-radius:5px;">{perf_.score or 0}</span>',
+                    unsafe_allow_html=True,
+                )
                 cols[4].write(f"{perf_.meteo.value} ({perf_.temperature}°C)")
                 cols[5].write(f"{clip_text(perf_.technical_cues, 100)}")
                 cols[6].write(f"{clip_text(perf_.physical_cues, 100)}")
                 cols[7].write(f"{clip_text(perf_.mental_cues, 100)}")
-            else:
-                cols = st.columns([1, 1, 1, 1, 2, 2, 2])
-                cols[0].write(perf_.date)
-                cols[1].write(perf_.discipline)
-                cols[2].write(f"{perf_.performance} {perf_.unit}")
-                cols[3].write(f"{perf_.meteo.value} ({perf_.temperature}°C)")
-                cols[4].write(f"{clip_text(perf_.technical_cues, 100)}")
-                cols[5].write(f"{clip_text(perf_.physical_cues, 100)}")
-                cols[6].write(f"{clip_text(perf_.mental_cues, 100)}")                
                 
+            
+
         # --- Pagination control ---
         if total_pages > 1:
             st.write(f"Page {current_page} sur {total_pages}")
@@ -294,3 +351,22 @@ def add_performance():
                 #st.rerun()
             else:
                 st.error("Échec de l'enregistrement.")
+                
+
+########################
+### HELPER FUNCTIONS ###
+######################## 
+
+def score_color(intensity: int) -> str:
+    if intensity > 700:
+        return "#00cd00"
+    elif 700 >= intensity > 600:
+        return "#ffff00"
+    elif 600 >= intensity > 500:
+        return "#ffa500"
+    elif 500 >= intensity > 400:
+        return "#cd0000"
+    elif 400 >= intensity > 300:
+        return "#8b0000"
+    else:
+        return "#000000"

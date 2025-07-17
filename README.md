@@ -82,8 +82,7 @@ Keep track of performances in each sport and discipline.
   - Physical cues
   - Mental cues
 
-For athletics, the score of the performance is calculated according to the IAAF formulaes. It is also possible to sort performances by score (increasing or decreasing).
----
+## For athletics, the score of the performance is calculated according to the IAAF formulaes. It is also possible to sort performances by score (increasing or decreasing).
 
 ![Compute Athletics Performance Score](illus/decathlon_table.png "IAAF Score Computation")
 ![Form to store a new performance](illus/create_performance1.png "Performance creation form")
@@ -186,7 +185,7 @@ Some improvements:
 
 - Layout of frontend: better color palette, display in blocks more than just all sections one after the other.
 - Fix bugs.
-- Add Personal Best calculation in the performance display (PB and FilterPB to know what is the PB and what is the PB in the conditions set through the filters).
+- Color of scores in performance display, not really visible depending on values/coloring.
 
 Bigger features:
 

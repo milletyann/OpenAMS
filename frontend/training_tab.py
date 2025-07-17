@@ -114,7 +114,7 @@ def display_trainings():
                     "Plus Longue": lambda s: s.duration_minutes,
                 }
                 selected_sort = st.selectbox("Trier les entraînements par", options=list(sort_options.keys()))
-                reverse_sort = True  # All sorts are descending
+                reverse_sort = True
             
                 
             # Detect change and reset page if needed
