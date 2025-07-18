@@ -2,10 +2,14 @@ import streamlit as st
 from sqlmodel import Session, select
 import requests
 import pandas as pd
-from datetime import date
+from datetime import date, datetime, timedelta
 from backend.models.enumeration import Role
 from backend.models.user import User
+from backend.models.injury_ticket import InjuryType, BodyArea
 from backend.database import engine
+
+import locale
+locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
 
 API_URL = "http://localhost:8000"
 
@@ -15,6 +19,12 @@ def health_tab():
     display_health_check()
     st.divider()
     add_daily_health_check()
+    st.divider()
+    create_physical_issue()
+    st.divider()
+    add_followup()
+    st.divider()
+    display_issues()
     
     
 def fetch_athletes():
@@ -90,8 +100,6 @@ def display_health_check():
             st.error("Impossible de récupérer les checks santé.")
     except Exception as e:
         st.error(f"Requête échouée: {e}")
-
-
 
 def add_daily_health_check():
     st.subheader("Ajouter un check santé quotidien")
@@ -177,4 +185,160 @@ def add_daily_health_check():
                 except Exception as e:
                     st.error(f"Requête échouée: {e}")
 
+def create_physical_issue():
+    st.subheader("Créer un ticket de blessure")
+    with Session(engine) as session:
+        athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
+    athlete_map = {a.name: a.id for a in athletes}
+    
+    with st.form("new_issue_form", clear_on_submit=True):
+        athlete_name = st.selectbox("Athlète", options=list(athlete_map.keys()))
+        date_opened = st.date_input("Date d'apparition", value=date.today())
+        title = st.text_input("Nom")
+        area = st.selectbox("Zone concernée", options=[area.value for area in BodyArea])
+        injury = st.selectbox("Type de blessure", options=[inj.value for inj in InjuryType])
+        notes = st.text_area("Notes")
+        submitted = st.form_submit_button("Créer ticket")
+        
+        if submitted:
+            payload = {
+                "athlete_id": athlete_map[athlete_name],
+                "date_opened": str(date_opened),
+                "title": title,
+                "area_concerned": area,
+                "injury_type": injury,
+                "notes": notes or None
+            }
+            resp = requests.post(f"{API_URL}/issues/", json=payload)
+            if resp.status_code == 200:
+                st.success("Ticket créé avec succès!")
+            else:
+                st.error(f"Erreur: {resp.json().get('detail')}")
 
+def add_followup():
+    st.subheader("Ajouter un suivi de blessure")
+    with Session(engine) as session:
+        athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
+    athlete_map = {a.name: a.id for a in athletes}
+    
+    athlete_name = st.selectbox("Athlète", options=[""] + list(athlete_map.keys()))
+    if not athlete_name:
+        return
+    
+    athlete_id = athlete_map[athlete_name]
+    issues = requests.get(f"{API_URL}/athletes/{athlete_id}/issues/").json()
+    
+    if not issues:
+        st.info("Aucune blessure enregistrée pour cet.te athlète.")
+        return
+    
+    
+    issue_map = {f"{i['title']} (Depuis le {datetime.strptime(i['date_opened'], '%Y-%m-%d').strftime('%d %B %Y')})": i['id'] for i in issues}
+    issue_label = st.selectbox("Sélectionner une blessure", options=[""] + list(issue_map.keys()))
+    if not issue_label:
+        return
+    
+    ticket_id = issue_map[issue_label]
+    followups = requests.get(f"{API_URL}/issues/{ticket_id}/followups/").json()
+    used_dates = {f["date"] for f in followups}
+    
+    selected_issue = next(i for i in issues if i["id"] == ticket_id)
+    min_followup_date = date.fromisoformat(selected_issue["date_opened"])
+    
+    # Compute available dates
+    all_dates = [
+        (min_followup_date + timedelta(days=i)).isoformat()
+        for i in range((date.today() - min_followup_date).days + 1)
+    ]
+    available_dates = sorted(set(all_dates) - used_dates)
+    if not available_dates:
+        st.info("Tous les jours entre la blessure et aujourd'hui ont déjà un suivi.")
+        return
+
+    default_date = date.fromisoformat(available_dates[-1])
+    max_followup_date = default_date
+    
+    with st.form("followup_form", clear_on_submit=True):
+        followup_date = st.date_input(
+            "Date",
+            value=default_date,
+            min_value=min_followup_date,
+            max_value=max_followup_date
+        )
+        
+        pain = st.slider("Intensité de la douleur", 0, 10, 5)
+        capacity = st.slider("Restriction de capacité", 0, 10, 5)
+        notes = st.text_area("Notes")
+        treatments = st.text_area("Traitements")
+        submitted = st.form_submit_button("Enregistrer le suivi")
+        
+        if submitted:
+            if followup_date.isoformat() not in available_dates:
+                st.warning("Le suivi est déjà renseigné ce jour.")
+            else:
+                payload = {
+                    "ticket_id": ticket_id,
+                    "date": str(followup_date),
+                    "pain_intensity": pain,
+                    "capacity_restriction": capacity,
+                    "status_notes": notes or None,
+                    "treatments_applied": treatments or None
+                }
+                resp = requests.post(f"{API_URL}/issues/{ticket_id}/followups/", json=payload)
+                if resp.status_code == 200:
+                    st.success("Suivi enregistré.")
+                    st.experimental_rerun()
+                else:
+                    st.error(f"Erreur: {resp.json().get('detail')}")
+
+def display_issues():
+    st.subheader("Suivi des blessures")
+    with Session(engine) as session:
+        athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
+    athlete_map = {a.name: a.id for a in athletes}
+    
+    athlete_name = st.selectbox("Athlète", options=[""] + list(athlete_map.keys()), key="disp_ai")
+    if not athlete_name:
+        return
+    
+    athlete_id = athlete_map[athlete_name]
+    tickets = requests.get(f"{API_URL}/athletes/{athlete_id}/issues/").json()
+    if not tickets:
+        st.info("Aucune blessure enregistrée pour cet.te athlète.")
+        return
+
+    ticket_map = {f"{t['title']} (Depuis le {datetime.strptime(t['date_opened'], '%Y-%m-%d').strftime('%d %B %Y')})": t["id"] for t in tickets}
+    t_label = st.selectbox("Sélectionner une blessure", options=[""] + list(ticket_map.keys()), key="disp_ti")
+    if not t_label:
+        return
+    
+    ticket_id = ticket_map[t_label]
+    ticket = next(t for t in tickets if t["id"] == ticket_id)
+    
+    
+    st.markdown(f"""
+    **Nom:** {ticket['title']}  
+    **Date d'apparition:** {ticket['date_opened']}  
+    **Zone:** {ticket['area_concerned']}  
+    **Type:** {ticket['injury_type']}  
+    **Informations générales:** {ticket.get('notes', '—')}
+    """)
+    
+    followups = requests.get(f"{API_URL}/issues/{ticket_id}/followups/").json()
+    if not followups:
+        st.info("Aucun suivi enregistré.")
+        return
+    
+    # Header row
+    cols = st.columns([1, 1, 1, 3, 3])
+    for c, h in zip(cols, ["Date", "Douleur", "Capacité", "Notes", "Traitements"]):
+        c.markdown(f"**{h}**")
+    st.markdown("---")
+    
+    for f in followups:
+        cols = st.columns([1, 1, 1, 3, 3])
+        cols[0].write(f["date"])
+        cols[1].write(f["pain_intensity"])
+        cols[2].write(f["capacity_restriction"])
+        cols[3].write(f.get("status_notes", "—"))
+        cols[4].write(f.get("treatments_applied", "—"))

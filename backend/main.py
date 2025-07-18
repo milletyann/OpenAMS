@@ -3,6 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import select, Session
 from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, CoachTrainingLinks
+from backend.models.injury_ticket import PhysicalIssueTicket, PhysicalIssueFollowUp, InjuryType, BodyArea
 from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
@@ -204,3 +205,38 @@ def get_health_checks_by_athlete(athlete_id: int, session: Session = Depends(get
     statement = select(HealthCheck).where(HealthCheck.athlete_id == athlete_id)
     results = session.exec(statement).all()
     return results
+
+# Créer un nouveau ticket
+@app.post("/issues/", response_model=PhysicalIssueTicket)
+def create_issue(ticket: PhysicalIssueTicket, session: Session = Depends(get_session)):
+    session.add(ticket)
+    session.commit()
+    session.refresh(ticket)
+    return ticket
+
+# Ajouter un suivi de ticket
+@app.post("/issues/{ticket_id}/followups/", response_model=PhysicalIssueFollowUp)
+def add_followup(ticket_id: int, followup: PhysicalIssueFollowUp, session: Session = Depends(get_session)):
+    ticket = session.get(PhysicalIssueTicket, ticket_id)
+    if not ticket:
+        raise HTTPException(404, "Ticket not found")
+    # Block duplicate date for same ticket
+    existing = session.exec(select(PhysicalIssueFollowUp)
+                            .where(PhysicalIssueFollowUp.ticket_id == ticket_id)
+                            .where(PhysicalIssueFollowUp.date == followup.date)).first()
+    if existing:
+        raise HTTPException(400, "Follow-up already exists for this date")
+    session.add(followup)
+    session.commit()
+    session.refresh(followup)
+    return followup
+
+# Récupérer les tickets d'un athlète
+@app.get("/athletes/{athlete_id}/issues/", response_model=list[PhysicalIssueTicket])
+def get_athlete_issues(athlete_id: int, session: Session = Depends(get_session)):
+    return session.exec(select(PhysicalIssueTicket).where(PhysicalIssueTicket.athlete_id == athlete_id)).all()
+
+# Récupérer tous les suivis pour un ticket
+@app.get("/issues/{ticket_id}/followups/", response_model=list[PhysicalIssueFollowUp])
+def get_issue_followups(ticket_id: int, session: Session = Depends(get_session)):
+    return session.exec(select(PhysicalIssueFollowUp).where(PhysicalIssueFollowUp.ticket_id == ticket_id).order_by(PhysicalIssueFollowUp.date)).all()
