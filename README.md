@@ -122,7 +122,6 @@ Keep a daily morning health check (one entry per day, can't submit more than onc
 Future improvements:
 
 - customizable graphs and plots in dashboard display to better explore data (instead of last 7 days display)
-- ticket opening to track specific pain/injury (open an injury, add daily update about it, be able to close it if resolved)
 - view pain/injuries evolution with plots and graphs, sort them
 
 ## Setup Instructions
