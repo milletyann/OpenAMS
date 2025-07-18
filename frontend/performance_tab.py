@@ -18,15 +18,20 @@ sport_disciplines = {
     "Mobilité": ["GE Facial", "GE Frontal Gauche", "GE Frontal Droit", "Hand-to-toes"]
 }
 
+# --- Athlétisme --- #
 throws = ['Disque', 'Javelot', 'Poids']
 jumps = ['Longueur', 'Hauteur', 'Perche']
 races = ['60m', '60mH', '100m', '100mH', '110mH', '200m', '400m', '800m', '1000m', '1500m']
 events_athle = throws + jumps + races
 
+# --- Lists for performance sorting --- #
 disciplines_to_min = races + sport_disciplines['Volley-ball']
 disciplines_to_max = jumps + throws + sport_disciplines['Mobilité']
 
+# --- Units --- #
 unites = ["centimètres", "secondes", "points", "kg"]
+
+# --- Weather --- #
 meteo_mapping = ["Canicule", "Soleil", "Nuageux", "Venteux", "Pluvieux", "Orageux", "Intérieur"]
 
 def performance_tab():

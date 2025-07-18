@@ -185,7 +185,6 @@ Some improvements:
 
 - Layout of frontend: better color palette, display in blocks more than just all sections one after the other.
 - Fix bugs.
-- Color of scores in performance display, not really visible depending on values/coloring.
 
 Bigger features:
 
