@@ -118,9 +118,9 @@ def add_daily_health_check():
         athlete_name = st.selectbox("Select athlete", list(athlete_options.keys()))
         athlete_id = athlete_options[athlete_name]
 
-        muscle_soreness = st.slider("Fatigue Musculaire (1-10)", 1, 10, 5)
-        sleep_quality = st.slider("Qualité du sommeil (1-10)", 1, 10, 5)
-        energy_level = st.slider("Niveau d'énergie (1-10)", 1, 10, 5)
+        muscle_soreness = st.slider("Fatigue Musculaire (1-10)", 0, 10, 5)
+        sleep_quality = st.slider("Qualité du sommeil (1-10)", 0, 10, 5)
+        energy_level = st.slider("Niveau d'énergie (1-10)", 0, 10, 5)
 
         mood = st.selectbox(
             "Mood",
