@@ -287,7 +287,6 @@ def add_followup():
                 resp = requests.post(f"{API_URL}/issues/{ticket_id}/followups/", json=payload)
                 if resp.status_code == 200:
                     st.success("Suivi enregistré.")
-                    st.experimental_rerun()
                 else:
                     st.error(f"Erreur: {resp.json().get('detail')}")
 
