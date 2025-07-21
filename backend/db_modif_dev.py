@@ -1,12 +1,14 @@
 from sqlalchemy import text
 from sqlmodel import Session, create_engine, select
 
-from backend.models import Performance
-from backend.database import get_session
-from backend.assets import compute_hungarian_score
-
 engine = create_engine("sqlite:///data/database.db")
 
 with Session(engine) as session:
-    session.execute(text("ALTER TABLE performance ADD COLUMN score FLOAT NOT NULL DEFAULT 0;"))
+    
+    for table_name in ["decathlonperformance", "decathlonathletelink", "decathlon"]:
+        try:
+            session.execute(text(f"DROP TABLE IF EXISTS {table_name}"))
+        except Exception as e:
+            print(f"Erreur de suppression de {table_name}: {e}")
+
     session.commit()

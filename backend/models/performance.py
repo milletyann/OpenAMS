@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
 from datetime import date
-from .user import User
+#from .user import User
 from .enumeration import Sport
 from enum import Enum
 

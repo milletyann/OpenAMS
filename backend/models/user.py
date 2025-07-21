@@ -2,6 +2,7 @@ from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship
 from backend.models.enumeration import Role, Sexe, Sport
 from .training import UserTrainingLinks, CoachTrainingLinks
+from .decathlon import DecathlonAthleteLink
 
 if TYPE_CHECKING:
     from .performance import Performance
@@ -23,3 +24,4 @@ class User(UserBase, table=True):
     training_sessions: List["UserTrainingLinks"] = Relationship(back_populates="user")
     coaches_supervising: List["CoachTrainingLinks"] = Relationship(back_populates="coach")
     performances: List["Performance"] = Relationship(back_populates="user")
+    competition_links: List["DecathlonAthleteLink"] = Relationship(back_populates="user")
