@@ -1,6 +1,7 @@
-# backend/main.py
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse, JSONResponse
+
 from sqlmodel import select, Session
 from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, CoachTrainingLinks
 from backend.models.injury_ticket import PhysicalIssueTicket, PhysicalIssueFollowUp, InjuryType, BodyArea
@@ -13,10 +14,13 @@ from backend.assets.hungarian import compute_hungarian_score
 
 app = FastAPI()
 
-# Allow frontend calls (adjust your frontend URL if different)
+origins = [
+    "http://localhost:8501",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or restrict to your frontend domain
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -148,15 +152,25 @@ def create_performance(perf: Performance, session: Session = Depends(get_session
 def get_performances(session: Session = Depends(get_session)):
     return session.exec(select(Performance)).all()
 
+@app.post("/performances/delete")
+def delete_performance(
+    performance_id: int = Form(...),
+    session: Session = Depends(get_session)
+):
+    perf = session.get(Performance, performance_id)
+    if not perf:
+        return JSONResponse({"detail": "Performance not found."}, status_code=404)
+    
+    session.delete(perf)
+    session.commit()
+    return JSONResponse({"detail": "Performance deleted."}, status_code=200)
 
 class ScoreRequest(BaseModel):
     event: str
     sex: str
     perf: float
-
 class ScoreResponse(BaseModel):
     score: int
-
 
 @app.post("/compute_hungarian_score", response_model=ScoreResponse)
 def compute_score_api(data: ScoreRequest):

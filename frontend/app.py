@@ -6,6 +6,7 @@ from user_tab import user_tab
 from performance_tab import performance_tab
 from health_tab import health_tab
 from dashboard_tab import dashboard_tab
+from decathlon_tab import decathlon_tab
 from settings import settings
 
 def main():
@@ -18,8 +19,8 @@ def main():
     # Sidebar radio with session state syncing
     selected_tab = st.sidebar.radio(
         "Menu",
-        ("Athlète", "Tableau de bord", "Entraînement", "Performance", "Santé", "Paramètres"),
-        index=["Athlète", "Tableau de bord", "Entraînement", "Performance", "Santé", "Paramètres"].index(st.session_state.selected_tab),
+        ("Athlète", "Tableau de bord", "Entraînement", "Performance", "Santé", "Décathlon", "Paramètres"),
+        index=["Athlète", "Tableau de bord", "Entraînement", "Performance", "Santé", "Décathlon", "Paramètres"].index(st.session_state.selected_tab),
         key="sidebar_tabs",
     )
     
@@ -42,6 +43,9 @@ def main():
 
     elif selected_tab == "Santé":
         health_tab()
+
+    elif selected_tab == "Décathlon":
+        decathlon_tab()
 
     elif selected_tab == "Paramètres":
         settings()

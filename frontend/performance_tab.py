@@ -13,7 +13,7 @@ API_URL = "http://localhost:8000"
 
 # --- Mapping ---
 sport_disciplines = {
-    "Athlétisme": ["Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "Décathlon", "100m", "Longueur", "Poids", "Hauteur", "400m", "110mH", "Disque", "Perche", "Javelot", "1500m", "Heptathlon", "60m", "60mH", "1000m", "200m", "400mH", "800m", "3000m", "3000m Steeple", "5000m", "10k", "Semi-marathon", "Marathon", "Marteau", "Triple-Saut"],
+    "Athlétisme": ["Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "Décathlon", "100m", "Longueur", "Poids", "Hauteur", "400m", "110mH", "100mH", "Disque", "Perche", "Javelot", "1500m", "Heptathlon", "60m", "60mH", "1000m", "200m", "400mH", "800m", "3000m", "3000m Steeple", "5000m", "10k", "Semi-marathon", "Marathon", "Marteau", "Triple-Saut"],
     "Volley-ball": ["Attaque", "Digs", "Recep", "Service - Ace", "Service - réussis", "Contre"],
     "Mobilité": ["GE Facial", "GE Frontal Gauche", "GE Frontal Droit", "Hand-to-toes"]
 }
@@ -149,25 +149,18 @@ def display_performances():
         start_idx = (current_page - 1) * performances_per_page
         end_idx = start_idx + performances_per_page
         performances_to_show = all_perfs[start_idx:end_idx]
-        
-        # Headers row
-        #cols = st.columns([1, 1, 1, 1, 2, 2, 2, 2])
-        #headers = ['Date', 'Discipline', 'Performance', 'Score', 'Météo', 'Remarques Techniques', 'Remarques Physiques', 'Remarques Mentales']
-
-        #for col, header in zip(cols, headers):
-        #    col.markdown(f"<center><b>{header}</b></center>", unsafe_allow_html=True)
             
         headers = f"""
             <div style="
                 margin: 5px;
             ">
-                <table style="width: 100%; border-collapse: collapse;">
+                <table style="width: 94%; border-collapse: collapse;">
                     <tr>
                         <td style="padding: 4px; width: 8%;"><center><b>Date</b></center></td>
                         <td style="padding: 4px; width: 8%;"><center><b>Discipline</b></center></td>
                         <td style="padding: 4px; width: 12%;"><center><b>Performance</b></center></td>
                         <td style="padding: 4px; width: 8%;"><center><b>Score</b></center></td>
-                        <td style="padding: 4px; width: 16%;"><center><b>Météo</b></center></td>
+                        <td style="padding: 4px; width: 12%;"><center><b>Météo</b></center></td>
                         <td style="padding: 4px; width: 16%;"><center><b>Remarques Techniques</b></center></td>
                         <td style="padding: 4px; width: 16%;"><center><b>Remarques Physiques</b></center></td>
                         <td style="padding: 4px; width: 16%;"><center><b>Remarques Mentales</b></center></td>
@@ -216,10 +209,10 @@ def display_performances():
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
                                     <td style="padding: 4px; width: 8%;">{perf_.date}</td>
-                                    <td style="padding: 4px; width: 8%;">{perf_.discipline}</td>
-                                    <td style="padding: 4px; width: 12%;">{perf_.performance} {perf_.unit}{pb_icon}</td>
+                                    <td style="padding: 4px; width: 8%;"><center>{perf_.discipline}</center></td>
+                                    <td style="padding: 4px; width: 12%;"><center>{perf_.performance} {perf_.unit}{pb_icon}</center></td>
                                     <td style="padding: 4px; width: 8%; color:{color_score}; font-weight:bold; background: white; text-align:center; border-radius:8px; opacity: 0.8;">{perf_.score or 0}</td>
-                                    <td style="padding: 4px; width: 16%;">{perf_.meteo.value} ({perf_.temperature}°C)</td>
+                                    <td style="padding: 4px; width: 12%;"><center>{perf_.meteo.value} ({perf_.temperature}°C)</center></td>
                                     <td style="padding: 4px; width: 16%;">{clip_text(perf_.technical_cues, 100)}</td>
                                     <td style="padding: 4px; width: 16%;">{clip_text(perf_.physical_cues, 100)}</td>
                                     <td style="padding: 4px; width: 16%;">{clip_text(perf_.mental_cues, 100)}</td>
@@ -227,8 +220,29 @@ def display_performances():
                             </table>
                         </div>
                     """
-            st.markdown(row_html, unsafe_allow_html=True)
+
+            row_cols = st.columns([19, 1])
+            with row_cols[0]:
+                st.markdown(row_html, unsafe_allow_html=True)
             
+            with row_cols[1]:
+                st.markdown(
+                    """
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
+                    """,
+                    unsafe_allow_html=True,
+                )
+                if st.button("🗑️", key=f"delete_{perf_.id}"):
+                    response = requests.post(
+                        f"{API_URL}/performances/delete",
+                        data={"performance_id": perf_.id}
+                    )
+                    if response.status_code == 200:
+                        st.success("Performance supprimée.")
+                        st.rerun()
+                    else:
+                        st.error(f"Erreur lors de la suppression: {response.text}")
+                st.markdown("</div>", unsafe_allow_html=True)
 
         # --- Pagination control ---
         if total_pages > 1:

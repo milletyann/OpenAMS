@@ -94,7 +94,7 @@ def display_health_check():
                 else:
                     st.dataframe(
                         last_week.sort_values("date", ascending=False),
-                        use_container_width=True
+                        use_container_width=True,
                     )
         else:
             st.error("Impossible de récupérer les checks santé.")
