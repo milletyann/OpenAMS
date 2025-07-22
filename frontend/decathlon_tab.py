@@ -86,12 +86,14 @@ def display_live_ranking(df_rank):
         y="Rank",
         color="Athlete",
         markers=True,
-        title="Évolution du classement après chaque épreuve",
+        hover_data=["Score", "Rank", "Athlete", "Event"],
+        title="Évolution du classement général",
     )
 
-    fig.update_yaxes(autorange="reversed", title="Rang")  # lower rank = better
+    fig.update_yaxes(autorange="reversed", title="Rang)")
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
+
 
 
 def display_competition():
@@ -121,8 +123,28 @@ def display_competition():
             }
         athlete_map[uid]["performances"][perf["event"]] = (perf["performance"], perf["score"])
         
+    # Filter by sexe
+    col1, col2, _ = st.columns([1, 1, 4])
+
+    with col1:
+        show_f = st.checkbox("Femmes", value=True)
+    with col2:
+        show_m = st.checkbox("Hommes", value=True)
+
+    if not (show_f or show_m):
+        st.warning("Veuillez sélectionner au moins un sexe.")
+        st.stop()
+
+    # Map to selected sexes
+    selected_sexes = []
+    if show_f:
+        selected_sexes.append("F")
+    if show_m:
+        selected_sexes.append("M")
+
+
     # Compute cumulative ranking
-    df_rank = compute_ranking(athlete_map)
+    df_rank = compute_ranking(athlete_map, selected_sexes)
     display_live_ranking(df_rank)
     
     html = """
@@ -371,7 +393,7 @@ def save_competition():
         
         
 # ---------- HELPERS ----------- #
-def compute_ranking(athlete_map):
+def compute_ranking(athlete_map, selected_sexes):
     # --- Build DataFrame for cumulative score tracking ---
     ranking_data = []
 
@@ -388,6 +410,10 @@ def compute_ranking(athlete_map):
             user = data["user"]
             perf_dict = data["performances"]
             name = user["name"]
+            sexe = user["sexe"]
+            
+            if sexe not in selected_sexes:
+                continue
             
             cumulative_score = 0
             for i in range(event_idx + 1):
@@ -395,16 +421,17 @@ def compute_ranking(athlete_map):
                 if ev in perf_dict:
                     cumulative_score += perf_dict[ev][1]  # score part
 
-            scores_this_event.append((name, cumulative_score))
+            scores_this_event.append((name, cumulative_score, sexe))
 
         # Rank athletes (higher score = better rank)
         scores_this_event.sort(key=lambda x: -x[1])  # descending
-        for rank, (name, score) in enumerate(scores_this_event, start=1):
+        for rank, (name, score, sexe) in enumerate(scores_this_event, start=1):
             ranking_data.append({
                 "Event": event,
                 "Athlete": name,
                 "Rank": rank,
                 "Score": score,
+                "Sexe": sexe,
             })
 
     # Create DataFrame
