@@ -26,7 +26,7 @@ events_athle = throws + jumps + races
 
 # --- Lists for performance sorting --- #
 disciplines_to_min = races + sport_disciplines['Volley-ball']
-disciplines_to_max = jumps + throws + sport_disciplines['Mobilité']
+disciplines_to_max = jumps + throws + ["Décathlon", "Heptathlon"] + sport_disciplines['Mobilité']
 
 # --- Units --- #
 unites = ["centimètres", "secondes", "points", "kg"]
@@ -204,7 +204,12 @@ def display_performances():
                                 opacity: 0.9;
                                 color: white;
                             ">"""
-            color_score = score_color(perf_.score)
+            if perf_.discipline == "Décathlon":
+                color_score = deca_score_color(perf_.score)
+            elif perf_.discipline == "Heptathlon":
+                color_score = hepta_score_color(perf_.score)
+            else:
+                color_score = score_color(perf_.score)
             row_html += f"""
                             <table style="width: 100%; border-collapse: collapse;">
                                 <tr>
@@ -323,8 +328,10 @@ def add_performance():
         if submitted:
             # GET THE SEX OF THE ATHLETE HERE (I GUESS?)
             sex = selected_athlete.sexe.value
+            if selected_discipline in ["Décathlon", "Heptathlon"]:
+                score = perf_mark
             # COMPUTE THE SCORE HERE (WE HAVE THE DISCIPLINE, THE SEX AND THE PERFORMANCE)
-            if selected_discipline in events_athle:
+            elif selected_discipline in events_athle:
                 score_payload = {
                     "event": selected_discipline,
                     "sex": sex,
@@ -356,7 +363,7 @@ def add_performance():
                 "discipline": selected_discipline,
                 "performance": perf_mark,
                 "unit": perf_unit,
-                "score": score, # FILL THE SCORE VARIABLE HERE
+                "score": score,
                 "temperature": temperature,
                 "meteo": meteo,
                 "technical_cues": technique,
@@ -367,7 +374,6 @@ def add_performance():
             if resp.status_code == 200:
                 st.success("Performance enregistrée !")
                 st.info(f"Score calculé : {score}")
-                #st.cache_data.clear()
                 #st.rerun()
             else:
                 st.error("Échec de l'enregistrement.")
@@ -387,6 +393,34 @@ def score_color(intensity: int) -> str:
     elif 500 >= intensity > 400:
         return "#cd0000"
     elif 400 >= intensity > 300:
+        return "#8b0000"
+    else:
+        return "#000000"
+
+def deca_score_color(intensity: int) -> str:
+    if intensity > 7000:
+        return "#00cd00"
+    elif 7000 >= intensity > 6000:
+        return "#ffff00"
+    elif 6000 >= intensity > 5000:
+        return "#ffa500"
+    elif 5000 >= intensity > 4000:
+        return "#cd0000"
+    elif 4000 >= intensity > 3000:
+        return "#8b0000"
+    else:
+        return "#000000"
+
+def hepta_score_color(intensity: int) -> str:
+    if intensity > 4900:
+        return "#00cd00"
+    elif 4900 >= intensity > 4200:
+        return "#ffff00"
+    elif 4200 >= intensity > 3500:
+        return "#ffa500"
+    elif 3500 >= intensity > 2800:
+        return "#cd0000"
+    elif 2800 >= intensity > 2100:
         return "#8b0000"
     else:
         return "#000000"
