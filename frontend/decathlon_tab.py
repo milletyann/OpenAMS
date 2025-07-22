@@ -139,9 +139,6 @@ def display_live_ranking(df_rank):
     #     showlegend=True,
     # )
 
-
-
-
 def display_competition():
     competitions = fetch_all_decathlons_cached()
     if not competitions:
@@ -213,27 +210,42 @@ def display_competition():
             html += f"<th style='border: 1px solid black;'>{event}</th>"
     html += "<th style='border: 1px solid black;'>Total</th></tr>"
 
+
+    athlete_rows = []
     for athlete_id, data in athlete_map.items():
         user = data["user"]
         perf_dict = data["performances"]
         total_score = 0
-        cumulative = 0
+
         if user["sexe"] == "M":
-            if user["age"] < 16:
-                events_athle = decaHM
-            else:
-                events_athle = decaH
-        elif user["sexe"] == "F":
+            events_athle = decaHM if user["age"] < 16 else decaH
+        else:
             events_athle = decaF
-            
+
+        for event in events_athle:
+            if event in perf_dict:
+                _, score = perf_dict[event]
+                total_score += score
+
+        athlete_rows.append((athlete_id, user, perf_dict, total_score))
+
+    # Sort descending by total_score
+    athlete_rows.sort(key=lambda x: x[3], reverse=True)
+
+    for athlete_id, user, perf_dict, total_score in athlete_rows:
+        if user["sexe"] == "M":
+            events_athle = decaHM if user["age"] < 16 else decaH
+        else:
+            events_athle = decaF
+
         html += f"<tr><td style='border: 1px solid black; font-weight: bold;'>{user['name']}</td>"
+        cumulative = 0
 
         for event in events_athle:
             unit = unit_mapping.get(event, "")
             if event in perf_dict:
                 perf, score = perf_dict[event]
                 cumulative += score
-                total_score += score
 
                 if unit == "m":
                     perf /= 100
@@ -254,6 +266,7 @@ def display_competition():
             html += f"<td style='border: 1px solid black;'>{cell}</td>"
 
         html += f"<td style='border: 1px solid black; font-weight: bold;'>{total_score}</td></tr>"
+
     html += "</table>"
     st.markdown(html, unsafe_allow_html=True)
         

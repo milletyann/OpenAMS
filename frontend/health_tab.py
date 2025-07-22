@@ -18,13 +18,17 @@ def health_tab():
 
     display_health_check()
     st.divider()
-    add_daily_health_check()
-    st.divider()
-    create_physical_issue()
-    st.divider()
-    add_followup()
-    st.divider()
     display_issues()
+    st.divider()
+    
+    col1, _, col2, _, col3 = st.columns([9, 1, 9, 1, 9])
+    with col1:    
+        add_daily_health_check()
+    with col2:
+        create_physical_issue()
+    with col3:
+        add_followup()
+        
     
 def fetch_athletes():
     """

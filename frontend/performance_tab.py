@@ -38,9 +38,11 @@ def performance_tab():
     st.title("Performance")
     display_performances()
     st.divider()
-    hungarian_table()
-    st.divider()
-    add_performance()
+    col1, _, col2 = st.columns([15, 1, 11])
+    with col1:
+        add_performance()
+    with col2:
+        hungarian_table()
     
 def display_performances():    
     st.subheader("Historique des performances")

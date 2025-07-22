@@ -6,12 +6,14 @@ API_URL = "http://127.0.0.1:8000"
 
 def user_tab():
     st.title("Athlete Monitoring System")
-    add_user()
     st.divider()
-    display_and_modify_user()
+    col1, _, col2 = st.columns([13, 1, 13])
+    with col1:
+        add_user()
+    with col2:
+        display_and_modify_user()
 
 def add_user():
-    # --- Create a new User ---
     st.subheader("Ajouter un nouvel utilisateur")
 
     with st.form("user_form"):
@@ -47,7 +49,6 @@ def add_user():
                 st.error(f"Échec de l'ajout de l'utilisateur: {response.text}")
 
 def display_and_modify_user():
-    # --- Display all users ---
     st.subheader("Utilisateurs actuels")
 
     response = requests.get(f"{API_URL}/users/")
