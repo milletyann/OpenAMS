@@ -78,6 +78,19 @@ def fetch_user(user_id: int):
         return resp.json()
     return None
 
+@st.cache_data
+def fetch_all_decathlons_cached():
+    return fetch_all_decathlons()
+
+@st.cache_data
+def fetch_performances_cached(comp_id):
+    return fetch_performances(comp_id)
+
+@st.cache_data
+def fetch_user_cached(uid):
+    return fetch_user(uid)
+
+
 # ----------------- Displaying section -------------------
 def display_live_ranking(df_rank):
     fig = px.line(
@@ -86,18 +99,49 @@ def display_live_ranking(df_rank):
         y="Rank",
         color="Athlete",
         markers=True,
-        hover_data=["Score", "Rank", "Athlete", "Event"],
+        hover_data={
+            "Athlete": True,
+            "Sexe": False,
+            "Intermédiaire": True,
+            "Score": True,
+            "Rank": False,
+            "Event": False,
+            "Missing": False
+        },
         title="Évolution du classement général",
     )
 
-    fig.update_yaxes(autorange="reversed", title="Rang)")
+    fig.update_yaxes(autorange="reversed", title="Rang")
     fig.update_layout(height=500)
     st.plotly_chart(fig, use_container_width=True)
 
 
+    # df_missing = df_rank[df_rank["Missing"]==True]
+    
+    # fig.add_scatter(
+    # x=df_missing["Event"],
+    # y=df_missing["Rank"],
+    # mode="markers",
+    # marker=dict(color="lightgrey", symbol="circle-open"),
+    # name="Manquant",
+    # text=df_missing["Athlete"],
+    # hovertemplate=(
+    #         "<b>%{text}</b><br>" +
+    #         "Sexe: %{customdata[1]}<br>" +
+    #         "Épreuve: %{x}<br>" +
+    #         "Points sur l'épreuve: 0<br>" +
+    #         "Points cumulés: %{customdata[0]}<br>" +
+    #         "<extra></extra>"
+    #     ),
+    #     customdata=df_missing[["Score", "Sexe"]],
+    #     showlegend=True,
+    # )
+
+
+
 
 def display_competition():
-    competitions = fetch_all_decathlons()
+    competitions = fetch_all_decathlons_cached()
     if not competitions:
         st.warning("Aucune compétition trouvée.")
         return
@@ -106,7 +150,7 @@ def display_competition():
     selected_name = st.selectbox("Choisir une compétition", list(comp_options.keys()))
     selected_comp = comp_options[selected_name]
 
-    performances = fetch_performances(selected_comp["id"])
+    performances = fetch_performances_cached(selected_comp["id"])
     if not performances:
         st.info("Aucune performance enregistrée pour cette compétition.")
         return
@@ -116,7 +160,7 @@ def display_competition():
     for perf in performances:
         uid = perf["user_id"]
         if uid not in athlete_map:
-            user_data = fetch_user(uid)
+            user_data = fetch_user_cached(uid)
             athlete_map[uid] = {
                 "user": user_data,
                 "performances": {}
@@ -217,7 +261,6 @@ def display_competition():
         st.session_state.decathlon_view = None
         st.rerun()
     
-
 
 def resume_competition():
     st.subheader("Reprendre une compétition en cours")
@@ -351,16 +394,7 @@ def save_competition():
             except Exception as e:
                 st.error(f"Erreur lors du lien: {e}")
                 continue
-            # if not athlete.id:
-            #     st.error(f"Pas d'ID pour l'athlète {athlete} — Skipping.")
-            #     continue
-
-            # # Add entry to link table
-            # link = DecathlonAthleteLink(
-            #     decathlon_id=comp.id,
-            #     user_id=athlete.id
-            # )
-            # session.add(link)
+            
         session.commit()
 
         # 3. Add performances for each athlete
@@ -394,45 +428,53 @@ def save_competition():
         
 # ---------- HELPERS ----------- #
 def compute_ranking(athlete_map, selected_sexes):
-    # --- Build DataFrame for cumulative score tracking ---
     ranking_data = []
 
-    # Determine a consistent ordered list of events (for axis)
-    events_set = set()
-    for athlete_data in athlete_map.values():
-        events_set.update(athlete_data["performances"].keys())
-    events_in_order = [e for e in decaH if e in events_set]  # fallback to decaH order
 
-    # Accumulate scores per event per athlete
-    for event_idx, event in enumerate(events_in_order):
+    # Track previous cumulative scores for missing events
+    cumulative_by_athlete = {}
+
+    for event_idx, event in enumerate(decaH):
         scores_this_event = []
+
         for athlete_id, data in athlete_map.items():
             user = data["user"]
             perf_dict = data["performances"]
             name = user["name"]
             sexe = user["sexe"]
-            
+            age= user["age"]
+
             if sexe not in selected_sexes:
                 continue
+
+            prev_score = cumulative_by_athlete.get(name, 0)
+
+            event_score = 0
+            if event in perf_dict:
+                event_score += perf_dict[event][1]
+            else:
+                event_score = 0
+
+            cumulative_score = prev_score + event_score
+            cumulative_by_athlete[name] = cumulative_score
             
-            cumulative_score = 0
-            for i in range(event_idx + 1):
-                ev = events_in_order[i]
-                if ev in perf_dict:
-                    cumulative_score += perf_dict[ev][1]  # score part
+            scores_this_event.append((name, cumulative_score, event_score, sexe))
 
-            scores_this_event.append((name, cumulative_score, sexe))
-
-        # Rank athletes (higher score = better rank)
-        scores_this_event.sort(key=lambda x: -x[1])  # descending
-        for rank, (name, score, sexe) in enumerate(scores_this_event, start=1):
+        if not scores_this_event:
+            continue
+        
+        display_event = "110mH/100mH" if event == "110mH" else event
+        scores_this_event.sort(key=lambda x: -x[1])
+        for rank, (name, cumulative_score, event_score, sexe) in enumerate(scores_this_event, start=1):
             ranking_data.append({
-                "Event": event,
+                "Event": display_event,
                 "Athlete": name,
                 "Rank": rank,
-                "Score": score,
+                "Intermédiaire": cumulative_score,
+                "Score": event_score,
                 "Sexe": sexe,
+                "Missing": event_score == 0,
             })
 
-    # Create DataFrame
     return pd.DataFrame(ranking_data)
+
