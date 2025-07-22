@@ -7,6 +7,8 @@ backend/models/__pycache__/*
 backend/assets/__pycache__/
 backend/assets/__pycache__/*
 
+backend/assets/find_curve_coefs.py
+
 
 frontend/__pycache__
 frontend/__pycache__/*
