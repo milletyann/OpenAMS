@@ -5,6 +5,7 @@ from fastapi.responses import RedirectResponse, JSONResponse
 from sqlmodel import select, Session
 from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, CoachTrainingLinks
 from backend.models.injury_ticket import PhysicalIssueTicket, PhysicalIssueFollowUp, InjuryType, BodyArea
+from backend.models.decathlon import Decathlon, DecathlonPerformance, DecathlonAthleteLink
 from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
@@ -48,6 +49,14 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
 def read_users(session: Session = Depends(get_session)):
     statement = select(User)
     return session.exec(statement).all()
+
+# Récuperer un user précis
+@app.get("/users/{user_id}")
+def get_user(user_id: int, session: Session = Depends(get_session)):
+    user = session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 # --- Récup tou.te.s les athlètes ---
 @app.get("/athletes", response_model=List[User])
@@ -184,6 +193,21 @@ def compute_score_api(data: ScoreRequest):
         return ScoreResponse(score=score)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# === DECATHLON === #
+# Récupérer les Compétitions
+@app.get("/decathlons")
+def get_all_decathlons(session: Session = Depends(get_session)):
+    return session.query(Decathlon).all()
+
+# Récupérer les performances d'une certaine compétition
+@app.get("/decathlon_performances")
+def get_decathlon_performances(decathlon_id: int, session: Session = Depends(get_session)):
+    return session.query(DecathlonPerformance).filter(
+        DecathlonPerformance.decathlon_id == decathlon_id
+    ).all()
+
+# Récuperer 
 
 
 # === HEALTH === #

@@ -26,7 +26,6 @@ def health_tab():
     st.divider()
     display_issues()
     
-    
 def fetch_athletes():
     """
     Fetch list of athletes from backend.
