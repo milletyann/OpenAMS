@@ -100,16 +100,18 @@ def display_live_ranking(df_rank):
         color="Athlete",
         markers=True,
         hover_data={
+            "Event": False,
             "Athlete": True,
-            "Sexe": False,
+            "Rank": False,
             "Intermédiaire": True,
             "Score": True,
-            "Rank": False,
-            "Event": False,
+            "Performance": True,
+            "Sexe": False,
             "Missing": False
         },
         title="Évolution du classement général",
     )
+
 
     fig.update_yaxes(autorange="reversed", title="Rang")
     fig.update_layout(height=500)
@@ -450,28 +452,47 @@ def compute_ranking(athlete_map, selected_sexes):
             prev_score = cumulative_by_athlete.get(name, 0)
 
             event_score = 0
+            raw_perf = None
+            formatted_perf = ""
             if event in perf_dict:
+                raw_perf = perf_dict[event][0]
                 event_score += perf_dict[event][1]
+                
+                unit = unit_mapping.get(event, "")
+                
+                if unit == "m":
+                    raw_perf /= 100
+                    formatted_perf = f"{raw_perf:.2f}m"
+                elif unit == "s":
+                    formatted_perf = f"{raw_perf:.2f}s"
+                elif unit == "min":
+                    minutes = int(raw_perf // 60)
+                    seconds = raw_perf % 60
+                    formatted_perf = f"{minutes}min{seconds:.2f}s"
+                else:
+                    formatted_perf = str(raw_perf)
+                
             else:
                 event_score = 0
 
             cumulative_score = prev_score + event_score
             cumulative_by_athlete[name] = cumulative_score
             
-            scores_this_event.append((name, cumulative_score, event_score, sexe))
+            scores_this_event.append((name, cumulative_score, event_score, formatted_perf, sexe))
 
         if not scores_this_event:
             continue
         
         display_event = "110mH/100mH" if event == "110mH" else event
         scores_this_event.sort(key=lambda x: -x[1])
-        for rank, (name, cumulative_score, event_score, sexe) in enumerate(scores_this_event, start=1):
+        for rank, (name, cumulative_score, event_score, formatted_perf, sexe) in enumerate(scores_this_event, start=1):
             ranking_data.append({
                 "Event": display_event,
                 "Athlete": name,
                 "Rank": rank,
                 "Intermédiaire": cumulative_score,
                 "Score": event_score,
+                "Performance": formatted_perf,
                 "Sexe": sexe,
                 "Missing": event_score == 0,
             })
