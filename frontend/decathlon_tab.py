@@ -78,6 +78,12 @@ def fetch_user(user_id: int):
         return resp.json()
     return None
 
+def fetch_user_best_total_score(user_id: int, discipline: str):
+    resp = requests.get(f"{API_URL}/get_pb", params={"user_id": user_id, "discipline": discipline})
+    if resp.status_code == 200:
+        return resp.json()
+    return 0
+
 @st.cache_data
 def fetch_all_decathlons_cached():
     return fetch_all_decathlons()
@@ -93,6 +99,10 @@ def fetch_user_cached(uid):
 
 # ----------------- Displaying section -------------------
 def display_live_ranking(df_rank):
+    if df_rank.empty:
+        st.info("Aucun.e athlète concerné.e.")
+        return
+
     fig = px.line(
         df_rank,
         x="Event",
@@ -168,7 +178,6 @@ def display_competition():
         
     # Filter by sexe
     col1, col2, _ = st.columns([1, 1, 4])
-
     with col1:
         show_f = st.checkbox("Femmes", value=True)
     with col2:
@@ -178,7 +187,6 @@ def display_competition():
         st.warning("Veuillez sélectionner au moins un sexe.")
         st.stop()
 
-    # Map to selected sexes
     selected_sexes = []
     if show_f:
         selected_sexes.append("F")
@@ -232,13 +240,31 @@ def display_competition():
     # Sort descending by total_score
     athlete_rows.sort(key=lambda x: x[3], reverse=True)
 
+    rank = 0
     for athlete_id, user, perf_dict, total_score in athlete_rows:
+        if user["sexe"] not in selected_sexes:
+            continue
+        
+        rank += 1
+        if rank == 1:
+            bg_color = "#FFD90088"
+        elif rank == 2:
+            bg_color = "#C0C0C088"
+        elif rank == 3:
+            bg_color = "#CD7F3288"
+        else:
+            bg_color = ""
+            
+        best_perf = fetch_user_best_total_score(user["id"], discipline="Décathlon")
+        best_score = best_perf['score']
+        pb_tag = " <span style='color:white;'>(PB)</span>" if total_score > best_score else ""
+        
         if user["sexe"] == "M":
             events_athle = decaHM if user["age"] < 16 else decaH
         else:
             events_athle = decaF
 
-        html += f"<tr><td style='border: 1px solid black; font-weight: bold;'>{user['name']}</td>"
+        html += f"<tr><td style='border: 1px solid black; font-weight: bold; background-color:{bg_color};'>{user['name']}</td>"
         cumulative = 0
 
         for event in events_athle:
@@ -263,9 +289,9 @@ def display_competition():
             else:
                 cell = "-"
 
-            html += f"<td style='border: 1px solid black;'>{cell}</td>"
+            html += f"<td style='border: 1px solid black; background-color:{bg_color};'>{cell}</td>"
 
-        html += f"<td style='border: 1px solid black; font-weight: bold;'>{total_score}</td></tr>"
+        html += f"<td style='border: 1px solid black; background-color:{bg_color};'><b>{total_score}</b><i>{pb_tag}</i></td></tr>"
 
     html += "</table>"
     st.markdown(html, unsafe_allow_html=True)

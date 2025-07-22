@@ -1,6 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, Request, Form
+from fastapi import FastAPI, Depends, HTTPException, Request, Form#, APIRouter, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, JSONResponse
+
+
+#from typing import Optional
+#from datetime import date
 
 from sqlmodel import select, Session
 from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, CoachTrainingLinks
@@ -101,9 +105,6 @@ def delete_user(user_id: int, session: Session = Depends(get_session)):
     session.commit()
     return {"message": "User deleted"}
 
-
-
-
 # === TRAINING === #
 # --- Créer une session d'entraînement ---
 @app.post("/trainings/", response_model=TrainingSession)
@@ -193,6 +194,33 @@ def compute_score_api(data: ScoreRequest):
         return ScoreResponse(score=score)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+    
+@app.get("/get_pb")
+def get_pb(user_id: int, discipline: str, session: Session = Depends(get_session)):
+    query = (
+        select(Performance)
+        .where(Performance.user_id == user_id)
+        .where(Performance.discipline == discipline)
+    )
+
+    perfs = session.exec(query).all()
+
+    if not perfs:
+        return {
+            "performance": 0,
+            "score": 0,
+            "unit": None,
+            "date": None
+        }
+
+    best_perf = max(perfs, key=lambda p: p.score)
+
+    return {
+        "performance": best_perf.performance,
+        "score": best_perf.score,
+        "unit": getattr(best_perf, "unit", None),
+        "date": best_perf.date if hasattr(best_perf, "date") else None,
+    }
 
 # === DECATHLON === #
 # Récupérer les Compétitions
