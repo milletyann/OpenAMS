@@ -17,6 +17,7 @@ API_URL = "http://localhost:8000"
 decaH = ["100m", "Longueur", "Poids", "Hauteur", "400m", "110mH", "Disque", "Perche", "Javelot", "1500m"]
 decaF = ["100m", "Longueur", "Poids", "Hauteur", "400m", "100mH", "Disque", "Perche", "Javelot", "1500m"]
 decaHM = ["100m", "Longueur", "Poids", "Hauteur", "400m", "100mH", "Disque", "Perche", "Javelot", "1500m"]
+all_events_deca = ["100m", "Longueur", "Poids", "Hauteur", "400m", "110mH/100mH", "Disque", "Perche", "Javelot", "1500m"]
 
 unit_mapping = {
     "100m": "s",
@@ -84,6 +85,12 @@ def fetch_user_best_total_score(user_id: int, discipline: str):
         return resp.json()
     return 0
 
+def fetch_athletes_in_deca(decathlon_id: int):
+    resp = requests.get(f"{API_URL}/athletes_in_decathlon?decathlon_id={decathlon_id}")
+    if resp.status_code == 200:
+        return resp.json()
+    return []
+
 @st.cache_data
 def fetch_all_decathlons_cached():
     return fetch_all_decathlons()
@@ -103,6 +110,17 @@ def display_live_ranking(df_rank):
         st.info("Aucun.e athlète concerné.e.")
         return
 
+    completed_events = df_rank[~df_rank["Missing"]]["Event"].unique().tolist()
+    if not completed_events:
+        st.info("Aucune performance enregistrée.")
+        return
+    
+    last_event = max(completed_events, key=lambda e: all_events_deca.index(e))
+    last_event_index = all_events_deca.index(last_event)
+    not_allowed_events = all_events_deca[last_event_index + 1:]
+    
+    df_rank.loc[df_rank[df_rank["Event"].isin(not_allowed_events)].index, 'Rank'] = None
+    
     fig = px.line(
         df_rank,
         x="Event",
@@ -124,30 +142,10 @@ def display_live_ranking(df_rank):
 
 
     fig.update_yaxes(autorange="reversed", title="Rang")
-    fig.update_layout(height=500)
+    fig.update_layout(
+        height=600, 
+        xaxis=dict(categoryarray=all_events_deca))
     st.plotly_chart(fig, use_container_width=True)
-
-
-    # df_missing = df_rank[df_rank["Missing"]==True]
-    
-    # fig.add_scatter(
-    # x=df_missing["Event"],
-    # y=df_missing["Rank"],
-    # mode="markers",
-    # marker=dict(color="lightgrey", symbol="circle-open"),
-    # name="Manquant",
-    # text=df_missing["Athlete"],
-    # hovertemplate=(
-    #         "<b>%{text}</b><br>" +
-    #         "Sexe: %{customdata[1]}<br>" +
-    #         "Épreuve: %{x}<br>" +
-    #         "Points sur l'épreuve: 0<br>" +
-    #         "Points cumulés: %{customdata[0]}<br>" +
-    #         "<extra></extra>"
-    #     ),
-    #     customdata=df_missing[["Score", "Sexe"]],
-    #     showlegend=True,
-    # )
 
 def display_competition():
     competitions = fetch_all_decathlons_cached()
@@ -301,11 +299,54 @@ def display_competition():
     if st.button("Retour"):
         st.session_state.decathlon_view = None
         st.rerun()
-    
 
+
+# ----------------- Resume/Modify section -----------------
 def resume_competition():
     st.subheader("Reprendre une compétition en cours")
-    st.info("Fonctionnalité à venir...")
+    competitions = fetch_all_decathlons_cached()
+    if not competitions:
+        st.warning("Aucune compétition trouvée.")
+        return
+
+    comp_options = {comp["name"]: comp for comp in competitions}
+    selected_name = st.selectbox("Choisir une compétition", list(comp_options.keys()))
+    selected_comp = comp_options[selected_name]
+    
+    performances = fetch_performances_cached(selected_comp["id"])
+    competition_data = {}
+    if not performances:
+        ids = fetch_athletes_in_deca(selected_comp["id"])
+        active_athletes = []
+        with Session(engine) as session:
+            for id in ids:
+                athlete = session.exec(select(User).where(User.id == id['user_id'])).all()
+                active_athletes.append(athlete[0])
+        for athlete in ids:
+            competition_data[athlete['user_id']] = {}
+            
+    else:
+        ids = []
+        for perf in performances:
+            id = perf['user_id']
+            if not id in ids:
+                ids.append(id)
+                competition_data[id] = {}
+            event = perf['event']
+            p = perf['performance']
+            competition_data[id][event] = p
+        
+        active_athletes = []
+        with Session(engine) as session:
+            for id in ids:
+                athlete = session.exec(select(User).where(User.id == id)).all()
+                
+                active_athletes.append(athlete[0])
+
+    st.session_state["competition_data"] = competition_data
+    st.session_state["active_athletes"] = active_athletes
+
+    render_decathlon_table(edit_mode=True)
     
     if st.button("Retour"):
         st.session_state.decathlon_view = None
@@ -336,15 +377,18 @@ def create_competition():
 
     if st.session_state.get("start_competition"):
         st.session_state['competition_name'] = name
-        render_decathlon_table()
+        render_decathlon_table(edit_mode=False)
     
     if st.button("Retour"):
         st.session_state.decathlon_view = None
+        st.session_state.active_athletes = []
+        st.session_state.competition_data = {}
         st.rerun()
 
 # ------------------ Editable Table with Scoring ------------------
-def render_decathlon_table():
-    st.markdown("### Entrer les performances")
+def render_decathlon_table(edit_mode):
+    if not edit_mode:
+        st.markdown("### Entrer les performances")
     competition_data = st.session_state.get("competition_data", {})
     active_athletes = st.session_state.get("active_athletes", [])
 
@@ -381,11 +425,34 @@ def render_decathlon_table():
 
     st.session_state["competition_data"] = competition_data
 
-    if st.button("Sauvegarder"):
-        save_competition()
-        st.session_state.decathlon_view = None
-        st.session_state.active_athletes = []
-        st.rerun()
+    st.divider()
+    if not edit_mode:
+        # not in edit mode = creation mode
+        if st.button("Sauvegarder"):
+            # save the competition object and already given performances into decathlon tables
+            save_competition_in_db()
+            st.session_state.decathlon_view = None
+            st.session_state.active_athletes = []
+            st.session_state.competition_data = {}
+            st.rerun()
+    else:
+        # edit mode so not the same way of saving into database
+        col1, _, col2 = st.columns([2, 5, 2])
+        with col1:            
+            if st.button("Enregistrer"):
+                # save the competition object and the given performances into decathlon tables (modify existing entries if necessary)
+                # some function to save all perfs into decathlon_performance table
+                st.success("Modifications enregistrées")
+                st.session_state.decathlon_view = None
+                st.rerun()
+        with col2:
+            if st.button("Sauvegarder les perfs"):
+                # save all perfs of athletes into performance table + sum up scores and create a decathlon performance in the performance table
+                # some function to save all perfs into performance table
+                st.session_state.decathlon_view = None
+                st.session_state.active_athletes = []
+                st.session_state.competition_data = {}
+                st.rerun()
 
 # ------------------ Compute Score ------------------
 def compute_score_remote(event: str, sex: str, perf: float) -> int:
@@ -409,7 +476,7 @@ def compute_score_remote(event: str, sex: str, perf: float) -> int:
         return 0
 
 # ------------------ Save to Database ------------------
-def save_competition():
+def save_competition_in_db():
     with Session(engine) as session:
         
         # 1. Create the competition
@@ -465,8 +532,7 @@ def save_competition():
         # 4. Final commit
         session.commit()
         st.success("Compétition sauvegardée")
-        
-        
+  
 # ---------- HELPERS ----------- #
 def compute_ranking(athlete_map, selected_sexes):
     ranking_data = []

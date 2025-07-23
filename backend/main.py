@@ -65,7 +65,10 @@ def get_user(user_id: int, session: Session = Depends(get_session)):
 # --- Récup tou.te.s les athlètes ---
 @app.get("/athletes", response_model=List[User])
 def read_athletes(session: Session = Depends(get_session)):
-    return session.exec(select(User).where(User.role == Role.Athlete)).all()
+    return session.exec(
+        select(User)
+        .where(User.role == Role.Athlete)
+    ).all()
 
 
 # --- Mettre à jour un.e user ---
@@ -234,9 +237,13 @@ def get_decathlon_performances(decathlon_id: int, session: Session = Depends(get
     return session.query(DecathlonPerformance).filter(
         DecathlonPerformance.decathlon_id == decathlon_id
     ).all()
-
-# Récuperer 
-
+    
+# Récupérer les id d'athlètes qui sont notés dans un certain décathlon
+@app.get("/athletes_in_decathlon")
+def get_decathlon_athletes(decathlon_id: int, session: Session = Depends(get_session)):
+    return session.query(DecathlonAthleteLink).filter(
+        DecathlonAthleteLink.decathlon_id == decathlon_id
+    ).all()
 
 # === HEALTH === #
 # Créer un HealthCheck
