@@ -4,7 +4,6 @@ from fastapi.responses import RedirectResponse, JSONResponse
 
 
 #from typing import Optional
-#from datetime import date
 
 from sqlmodel import select, Session
 from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, CoachTrainingLinks
@@ -14,6 +13,7 @@ from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
 
+from datetime import date
 from pydantic import BaseModel
 from backend.assets.hungarian import compute_hungarian_score
 
@@ -152,6 +152,36 @@ def get_user_trainings(user_id: int, session: Session = Depends(get_session)):
     
     return trainings
 
+# --- Lister les séances d'un.e athlète entre 2 dates spécifiques ---
+@app.get("/training_data")
+def get_training_data(user_id: int, start_date: date, end_date: date, session: Session = Depends(get_session)):
+    training_links = session.exec(
+        select(UserTrainingLinks).where(UserTrainingLinks.user_id == user_id)
+    ).all()
+
+    training_ids = [link.training_id for link in training_links]
+    
+    if not training_ids:
+        return []
+    
+    trainings = session.exec(
+        select(TrainingSession)
+        .where(TrainingSession.id.in_(training_ids))
+        .where(TrainingSession.date >= start_date)
+        .where(TrainingSession.date <= end_date)
+    ).all()
+
+    return [
+        {
+            "date": t.date,
+            "duration": t.duration_minutes,
+            "intensity": t.intensity,
+            "sport": t.sport,
+            "type": t.type,
+        }
+        for t in trainings
+    ]
+
 
 # === PERFORMANCE === #
 @app.post("/performances/")
@@ -244,47 +274,6 @@ def get_decathlon_athletes(decathlon_id: int, session: Session = Depends(get_ses
     return session.query(DecathlonAthleteLink).filter(
         DecathlonAthleteLink.decathlon_id == decathlon_id
     ).all()
-    
-
-# @app.post("/update_or_create_decathlon_performances")
-# def update_or_create_decathlon_performances(performances: dict, decathlon: Decathlon, session: Session = Depends(get_session)):
-#     updated = 0
-#     created = 0
-
-#     formatted_performances = []
-#     for user_id, events in performances.items():
-#         for event, performance in events.items():
-#             formatted_performances.append({'user_id': user_id, 'event': event, 'performance': performance})
-    
-#     for perf in formatted_performances:
-#         user = get_user(perf.user_id)
-#         existing = session.exec(
-#             select(DecathlonPerformance)
-#             .where(DecathlonPerformance.decathlon_id == decathlon.id)
-#             .where(DecathlonPerformance.user_id == perf.user_id)
-#             .where(DecathlonPerformance.event == perf.event)
-#         ).first()
-        
-#         score = compute_hungarian_score(perf.event, user.id, perf.performance)
-#         if existing:
-#             existing.performance = perf.performance
-#             existing.score = score
-#             existing.date = decathlon.date
-#             updated += 1
-#         else:
-#             new_perf = DecathlonPerformance(
-#                 decathlon_id=decathlon.id,
-#                 user_id=perf.user_id,
-#                 event=perf.event,
-#                 performance=perf.performance,
-#                 score=score,
-#                 date=decathlon.date
-#             )
-#             session.add(new_perf)
-#             created += 1
-
-#     session.commit()
-#     return {"updated": updated, "created": created}
 
 # === HEALTH === #
 # Créer un HealthCheck
