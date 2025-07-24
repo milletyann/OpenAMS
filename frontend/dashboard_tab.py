@@ -80,7 +80,7 @@ def dashboard_tab():
     with col2:
         training_load(athlete)
     with col3:
-        cs_graph(athlete)
+        radar_graph(athlete)
     
     col1, _, col2 = st.columns([20, 1, 20])
     with col1:
@@ -227,7 +227,7 @@ def plot_training_load_gauge(load):
     return fig
 
 # ----- Graphe CS ----- #
-def cs_graph(athlete):
+def radar_graph(athlete):
     period = st.session_state.period
     end_date = period[1]
     start_date = period[0]
