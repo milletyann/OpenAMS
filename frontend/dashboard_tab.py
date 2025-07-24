@@ -47,9 +47,24 @@ def main_header():
     athletes_options = {athlete['name']: athlete for athlete in athletes}
     with col1:
         selected_athlete = st.selectbox("Athlète à monitorer", list(athletes_options.keys()))
+    
+    default_start = date.today() - timedelta(days=7)
+    default_end = date.today()
     with col2:
-        horizon = st.slider("Horizon d'analyse (jours)", 7, 35, 7)
-        st.session_state.horizon = horizon
+        start, end = st.date_input(
+            "Période",
+            value=(default_start, default_end),
+            min_value= date.today() - timedelta(days=60),
+            max_value= date.today()
+        )
+
+        if (end - start).days < 7:
+            st.warning("La période doit être d’au moins 7 jours.")
+            st.stop()
+
+        st.session_state.period = (start, end)
+    
+    st.session_state.period = (start, end)
     
     return athletes_options[selected_athlete]
 
@@ -63,9 +78,9 @@ def bandeau(athlete):
 
 # ----- Charge d'entraînement ----- #
 def training_load(athlete):
-    d = st.session_state.horizon
-    end_date = date.today()
-    start_date = end_date - timedelta(days=d)
+    period = st.session_state.period
+    end_date = period[1]
+    start_date = period[0]
     user_id = athlete["id"]
 
     response = requests.get(f"{API_URL}/training_data", params={
@@ -85,12 +100,12 @@ def training_load(athlete):
         return
 
     training_data = response.json()
-    load = compute_training_load(training_data=training_data, horizon=d)
+    load = compute_training_load(training_data=training_data, period=period)
 
     fig = plot_training_load_gauge(load)
     st.plotly_chart(fig, use_container_width=True)
 
-def compute_training_load(training_data, horizon, I_max=8, D_max=180):
+def compute_training_load(training_data, period, I_max=8, D_max=180):
     df = pd.DataFrame(training_data)
 
     if df.empty:
@@ -102,7 +117,10 @@ def compute_training_load(training_data, horizon, I_max=8, D_max=180):
     df["training_product"] = df["duration"] * df["intensity"]
 
     # double check de la période sur laquelle on filtre
-    df = df[df["date"] >= pd.Timestamp.today().normalize() - pd.Timedelta(days=horizon)]
+    start, end = pd.Timestamp(period[0]), pd.Timestamp(period[1])
+    df = df[(df["date"] >= start)]
+    df = df[(df["date"] <= end)]
+    delta = (end - start).days
 
     if df.empty:
         return 0.0
@@ -110,7 +128,7 @@ def compute_training_load(training_data, horizon, I_max=8, D_max=180):
     grouped = df.groupby("date").agg({"intensity": "sum", "duration": "sum", "training_product": "sum"})
     grouped["load_per_day"] = grouped["training_product"] / (I_max*D_max)
 
-    load = (10 / horizon) * grouped["load_per_day"].sum()
+    load = (10 / delta) * grouped["load_per_day"].sum()
     return load
 
 def plot_training_load_gauge(load):
@@ -127,18 +145,19 @@ def plot_training_load_gauge(load):
             'borderwidth': 2,
             'bordercolor': None,
             'steps': [
-                {'range': [0, 3], 'color': "#4CAF50"},
-                {'range': [3, 5], 'color': "#FFC107"},
-                {'range': [5, 7], 'color': "#FF9800"},
-                {'range': [7, 9], 'color': "#F44336"},
-                {'range': [9, 9.7], 'color': "#5D4037"},
-                {'range': [9.7, 10], 'color': "#1B1B1B"},
+                {'range': [0, 3], 'color': "#60AF62"}, #4CAF4F
+                {'range': [3, 5], 'color': "#FFC926"}, #FFC107
+                {'range': [5, 7], 'color': "#FFA51F"}, #FF9800
+                {'range': [7, 9], 'color': "#FF4A3D"}, #F44336
+                {'range': [9, 9.7], 'color': "#5C453E"}, #5D4037
+                {'range': [9.7, 10], 'color': "#272727"}, #1B1B1B
             ],
-            'threshold': {
-                'line': {'color': "white", 'width': 2},
-                'thickness': 0.75,
-                'value': 7.5
-            }
+            'threshold': None
+            # {
+            #     'line': {'color': "white", 'width': 2},
+            #     'thickness': 0.75,
+            #     'value': 7.5
+            # }
         }
     ))
 
