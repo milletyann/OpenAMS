@@ -244,6 +244,47 @@ def get_decathlon_athletes(decathlon_id: int, session: Session = Depends(get_ses
     return session.query(DecathlonAthleteLink).filter(
         DecathlonAthleteLink.decathlon_id == decathlon_id
     ).all()
+    
+
+# @app.post("/update_or_create_decathlon_performances")
+# def update_or_create_decathlon_performances(performances: dict, decathlon: Decathlon, session: Session = Depends(get_session)):
+#     updated = 0
+#     created = 0
+
+#     formatted_performances = []
+#     for user_id, events in performances.items():
+#         for event, performance in events.items():
+#             formatted_performances.append({'user_id': user_id, 'event': event, 'performance': performance})
+    
+#     for perf in formatted_performances:
+#         user = get_user(perf.user_id)
+#         existing = session.exec(
+#             select(DecathlonPerformance)
+#             .where(DecathlonPerformance.decathlon_id == decathlon.id)
+#             .where(DecathlonPerformance.user_id == perf.user_id)
+#             .where(DecathlonPerformance.event == perf.event)
+#         ).first()
+        
+#         score = compute_hungarian_score(perf.event, user.id, perf.performance)
+#         if existing:
+#             existing.performance = perf.performance
+#             existing.score = score
+#             existing.date = decathlon.date
+#             updated += 1
+#         else:
+#             new_perf = DecathlonPerformance(
+#                 decathlon_id=decathlon.id,
+#                 user_id=perf.user_id,
+#                 event=perf.event,
+#                 performance=perf.performance,
+#                 score=score,
+#                 date=decathlon.date
+#             )
+#             session.add(new_perf)
+#             created += 1
+
+#     session.commit()
+#     return {"updated": updated, "created": created}
 
 # === HEALTH === #
 # Créer un HealthCheck

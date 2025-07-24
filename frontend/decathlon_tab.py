@@ -9,6 +9,7 @@ from backend.models.enumeration import Role, Sport
 from backend.models.decathlon import Decathlon, DecathlonPerformance, DecathlonAthleteLink
 
 import pandas as pd
+from datetime import datetime
 import plotly.express as px
 
 API_URL = "http://localhost:8000"
@@ -300,7 +301,6 @@ def display_competition():
         st.session_state.decathlon_view = None
         st.rerun()
 
-
 # ----------------- Resume/Modify section -----------------
 def resume_competition():
     st.subheader("Reprendre une compétition en cours")
@@ -312,6 +312,8 @@ def resume_competition():
     comp_options = {comp["name"]: comp for comp in competitions}
     selected_name = st.selectbox("Choisir une compétition", list(comp_options.keys()))
     selected_comp = comp_options[selected_name]
+    
+    st.session_state["decathlon_object"] = selected_comp
     
     performances = fetch_performances_cached(selected_comp["id"])
     competition_data = {}
@@ -351,6 +353,96 @@ def resume_competition():
     if st.button("Retour"):
         st.session_state.decathlon_view = None
         st.rerun()
+
+def update_decathlon_in_db():
+    with Session(engine) as session:
+        comp = st.session_state.get("decathlon_object")
+        if not comp:
+            st.error("Aucune compétition sélectionnée.")
+            return
+
+        decathlon_id = comp["id"]
+        comp_date = datetime.strptime(comp["date"], "%Y-%m-%d").date()
+        updated, created = 0, 0
+
+        for athlete in st.session_state["active_athletes"]:
+            user_id = athlete.id
+            sexe = athlete.sexe.value
+            age = athlete.age
+
+            if sexe == "M":
+                events = decaHM if age < 16 else decaH
+            elif sexe == "F":
+                events = decaF
+            else:
+                continue
+
+            perf_data = st.session_state["competition_data"].get(user_id, {})
+
+            for event in events:
+                perf_str = perf_data.get(event)
+                if not perf_str:
+                    continue
+
+                try:
+                    perf_val = float(perf_str)
+                    score = compute_score_remote(event, sexe, perf_val)
+                    print(score)
+
+                    existing = session.exec(
+                        select(DecathlonPerformance)
+                        .where(DecathlonPerformance.decathlon_id == decathlon_id)
+                        .where(DecathlonPerformance.user_id == user_id)
+                        .where(DecathlonPerformance.event == event)
+                    ).first()
+
+                    if existing:
+                        existing.performance = perf_val
+                        existing.score = score
+                        existing.date = comp_date
+                        updated += 1
+                    else:
+                        new_perf = DecathlonPerformance(
+                            decathlon_id=decathlon_id,
+                            user_id=user_id,
+                            event=event,
+                            performance=perf_val,
+                            score=score,
+                            date=comp_date
+                        )
+                        session.add(new_perf)
+                        created += 1
+
+                except ValueError:
+                    st.warning(f"Performance invalide: {perf_str} pour {athlete.name} ({event})")
+                except Exception as e:
+                    session.rollback()
+                    st.warning(f"Erreur pour {athlete.name} - {event}: {e}")
+
+        session.commit()
+        st.success(f"Performances mises à jour: {updated} – Ajouts: {created}")
+
+# def update_decathlon_in_db():
+    # competition_data = st.session_state["competition_data"]
+    # print()
+    # print("COMPETITION_DATA", type(competition_data))
+    # print()
+    # decathlon_obj = st.session_state["decathlon_object"]
+
+    # try:
+    #     response = requests.post(
+    #         f"{API_URL}/update_or_create_decathlon_performances",
+    #         params={competition_data, decathlon_obj}
+    #     )
+    #     print()
+    #     print(response)
+    #     print()
+    #     if response.status_code == 200:
+    #         st.success("Performances sauvegardées avec succès")
+    #     else:
+    #         st.error("Erreur lors de la sauvegarde des performances")
+    # except Exception as e:
+    #     print(f"Salut la mif: {e}")
 
 # ------------------ Competition Creation ------------------
 def create_competition():
@@ -430,7 +522,7 @@ def render_decathlon_table(edit_mode):
         # not in edit mode = creation mode
         if st.button("Sauvegarder"):
             # save the competition object and already given performances into decathlon tables
-            save_competition_in_db()
+            create_competition_in_db()
             st.session_state.decathlon_view = None
             st.session_state.active_athletes = []
             st.session_state.competition_data = {}
@@ -440,11 +532,11 @@ def render_decathlon_table(edit_mode):
         col1, _, col2 = st.columns([2, 5, 2])
         with col1:            
             if st.button("Enregistrer"):
-                # save the competition object and the given performances into decathlon tables (modify existing entries if necessary)
-                # some function to save all perfs into decathlon_performance table
-                st.success("Modifications enregistrées")
-                st.session_state.decathlon_view = None
+                # save all perfs into decathlon_performance table
+                update_decathlon_in_db()
+                #st.session_state.decathlon_view = None
                 st.rerun()
+                
         with col2:
             if st.button("Sauvegarder les perfs"):
                 # save all perfs of athletes into performance table + sum up scores and create a decathlon performance in the performance table
@@ -476,7 +568,7 @@ def compute_score_remote(event: str, sex: str, perf: float) -> int:
         return 0
 
 # ------------------ Save to Database ------------------
-def save_competition_in_db():
+def create_competition_in_db():
     with Session(engine) as session:
         
         # 1. Create the competition
@@ -536,35 +628,37 @@ def save_competition_in_db():
 # ---------- HELPERS ----------- #
 def compute_ranking(athlete_map, selected_sexes):
     ranking_data = []
-
-
-    # Track previous cumulative scores for missing events
     cumulative_by_athlete = {}
+    event_scores_map = {event: [] for event in all_events_deca}
 
-    for event_idx, event in enumerate(decaH):
-        scores_this_event = []
+    for athlete_id, data in athlete_map.items():
+        user = data["user"]
+        perf_dict = data["performances"]
+        name = user["name"]
+        sexe = user["sexe"]
+        age = user["age"]
 
-        for athlete_id, data in athlete_map.items():
-            user = data["user"]
-            perf_dict = data["performances"]
-            name = user["name"]
-            sexe = user["sexe"]
-            age= user["age"]
+        if sexe not in selected_sexes:
+            continue
 
-            if sexe not in selected_sexes:
-                continue
+        if sexe == "M":
+            events = decaHM if age < 16 else decaH
+        elif sexe == "F":
+            events = decaF
+        else:
+            continue
 
-            prev_score = cumulative_by_athlete.get(name, 0)
-
+        cumulative_score = 0
+        for event in events:
             event_score = 0
             raw_perf = None
             formatted_perf = ""
+
             if event in perf_dict:
                 raw_perf = perf_dict[event][0]
-                event_score += perf_dict[event][1]
-                
+                event_score = perf_dict[event][1]
+
                 unit = unit_mapping.get(event, "")
-                
                 if unit == "m":
                     raw_perf /= 100
                     formatted_perf = f"{raw_perf:.2f}m"
@@ -576,20 +670,27 @@ def compute_ranking(athlete_map, selected_sexes):
                     formatted_perf = f"{minutes}min{seconds:.2f}s"
                 else:
                     formatted_perf = str(raw_perf)
-                
             else:
                 event_score = 0
 
-            cumulative_score = prev_score + event_score
+            cumulative_score += event_score
             cumulative_by_athlete[name] = cumulative_score
-            
-            scores_this_event.append((name, cumulative_score, event_score, formatted_perf, sexe))
 
+            if event == "110mH" or event == "100mH":
+                event = "110mH/100mH"
+            event_scores_map[event].append(
+                (name, cumulative_score, event_score, formatted_perf, sexe)
+            )
+
+    for event in all_events_deca:
+        scores_this_event = event_scores_map.get(event, [])
         if not scores_this_event:
             continue
+
+        scores_this_event.sort(key=lambda x: -x[1])
         
         display_event = "110mH/100mH" if event == "110mH" else event
-        scores_this_event.sort(key=lambda x: -x[1])
+
         for rank, (name, cumulative_score, event_score, formatted_perf, sexe) in enumerate(scores_this_event, start=1):
             ranking_data.append({
                 "Event": display_event,
@@ -603,4 +704,3 @@ def compute_ranking(athlete_map, selected_sexes):
             })
 
     return pd.DataFrame(ranking_data)
-
