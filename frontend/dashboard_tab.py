@@ -1,12 +1,70 @@
 import streamlit as st
 import requests
+
 from datetime import date, timedelta
 import pandas as pd
-import matplotlib.pyplot as plt
+import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 
 API_URL = "http://localhost:8000"
+
+training_type_to_event_mapping = {
+    "Sprint - Technique": "Sprint", 
+    "Sprint - Lactique": "Lactique", 
+    "Course - Aérobie": "Aérobie", 
+    "Sprint - Départ": "Sprint", 
+    "Sprint - Haies": "Haies", 
+    "Longueur - Technique": "Longueur",
+    "Longueur - Élan réduit": "Longueur", 
+    "Longueur - Élan complet": "Longueur", 
+    "Longueur - Prise de marques": "Longueur", 
+    "Longueur - Courses d'élan": "Longueur", 
+    "Hauteur - Technique": "Hauteur",
+    "Hauteur - Élan réduit": "Hauteur", 
+    "Hauteur - Élan complet": "Hauteur", 
+    "Hauteur - Prise de marques": "Hauteur", 
+    "Hauteur - Courses d'élan": "Hauteur", 
+    "Perche - Technique": "Perche",
+    "Perche - Élan réduit": "Perche", 
+    "Perche - Élan complet": "Perche", 
+    "Perche - Prise de marques": "Perche", 
+    "Perche - Courses d'élan": "Perche", 
+    "Poids - Technique": "Poids", 
+    "Poids - Élan réduit": "Poids", 
+    "Poids - Élan complet": "Poids", 
+    "Disque - Technique": "Disque", 
+    "Disque - Élan réduit": "Disque", 
+    "Disque - Élan complet": "Disque", 
+    "Javelot - Technique": "Javelot", 
+    "Javelot - Élan réduit": "Javelot", 
+    "Javelot - Élan complet": "Javelot", 
+    "Lancer - PPG": "Muscu", 
+    "Muscu - Force": "Muscu", 
+    "Muscu - Puissance": "Muscu", 
+    "Muscu - Explosivité": "Muscu", 
+    "PPG": "Muscu", 
+    "Bondissements": "Muscu", 
+    "Compétition - Décathlon": "Compétition", 
+    "Compétition - 100m": "Compétition", 
+    "Compétition - Longueur": "Compétition", 
+    "Compétition - Poids": "Compétition", 
+    "Compétition - Hauteur": "Compétition", 
+    "Compétition - 400m": "Compétition", 
+    "Compétition - 110mH": "Compétition", 
+    "Compétition - Disque": "Compétition", 
+    "Compétition - Perche": "Compétition", 
+    "Compétition - Javelot": "Compétition", 
+    "Compétition - 1500m": "Compétition",
+    
+    "Général": "Mobilité", 
+    "Spécifique - Épaules": "Mobilité", 
+    "Spécifique - Hanches": "Mobilité", 
+    "Spécifique - Dos": "Mobilité", 
+    "Spécifique - Jambes": "Mobilité", 
+    "Spécifique - Bas du corps": "Mobilité", 
+    "Spécifique - Haut du corps": "Mobilité",
+}
 
 def dashboard_tab():
     st.title("Tableau de bord")
@@ -168,13 +226,85 @@ def plot_training_load_gauge(load):
 
     return fig
 
-
 # ----- Graphe CS ----- #
 def cs_graph(athlete):
-    st.info("Plot des répartitions d'entraînements (radar chart (faisable avec matplotlib \
-        par exemple) des derniers types d'entraînement effectués pour situer les épreuves \
-            sur lesquelles on met l'accent)")
+    period = st.session_state.period
+    end_date = period[1]
+    start_date = period[0]
+    user_id = athlete["id"]
 
+    response = requests.get(f"{API_URL}/training_data", params={
+        "user_id": user_id,
+        "start_date": start_date,
+        "end_date": end_date
+    })
+    
+    try:
+        response.raise_for_status()
+    except Exception as e:
+        st.error(f"Erreur: {e}")
+        st.stop()
+
+    if response.status_code != 200:
+        st.error("Erreur lors de la récupération des données.")
+        return
+
+    training_data = response.json()
+    df = pd.DataFrame(training_data)
+    
+    if df.empty:
+        return []
+
+    df['event'] = df['type'].map(training_type_to_event_mapping)
+    df = df.dropna(subset=['event'])
+    counts = df['event'].value_counts().reset_index()
+    counts.columns = ['name', 'value']
+    
+    
+    fig = plot_radar(counts)
+    st.plotly_chart(fig, use_container_width=True)
+    
+def plot_radar(df):
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatterpolar(
+        r=df['value'],
+        theta=df['name'],
+        fill='toself',
+        name='Training Types',
+        line=dict(color='royalblue')
+    ))
+
+    fig.update_layout(
+        polar=dict(
+            bgcolor='rgba(0,0,0,0)',
+            radialaxis=dict(
+                visible=True,
+                range=[0, df['value'].max() * 1.2],
+                showline=False,
+                ticks='',
+                showticklabels=True
+            ),
+            angularaxis=dict(
+                showline=False,
+                ticks='',
+                showticklabels=True,
+                tickcolor= 'rgba(0,0,0,0)',
+                tickfont=dict(size=14),
+                ticklen=15,
+                rotation=90,
+                direction='clockwise',
+            )
+        ),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        showlegend=False,
+        title="",
+        font=dict(color='white'),
+        margin=dict(t=20, l=60, r=50, b=30),
+    )
+    
+    return fig
 # ----- Corps Humain 3D ----- #
 def human_body(athlete):
     st.info("Corps 3D des blessures (le corps en 3D tourne lentement sur lui-même. \
