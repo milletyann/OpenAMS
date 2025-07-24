@@ -20,6 +20,11 @@ decaF = ["100m", "Longueur", "Poids", "Hauteur", "400m", "100mH", "Disque", "Per
 decaHM = ["100m", "Longueur", "Poids", "Hauteur", "400m", "100mH", "Disque", "Perche", "Javelot", "1500m"]
 all_events_deca = ["100m", "Longueur", "Poids", "Hauteur", "400m", "110mH/100mH", "Disque", "Perche", "Javelot", "1500m"]
 
+event_aliases = {
+    "110mH": "110mH/100mH",
+    "100mH": "110mH/100mH"
+}
+
 unit_mapping = {
     "100m": "s",
     "Longueur": "m",
@@ -218,9 +223,12 @@ def display_competition():
     html += "<th style='border: 1px solid black;'>Total</th></tr>"
 
 
+    best_scores_by_event = {}
     athlete_rows = []
     for athlete_id, data in athlete_map.items():
         user = data["user"]
+        if user["sexe"] not in selected_sexes:
+            continue
         perf_dict = data["performances"]
         total_score = 0
 
@@ -233,10 +241,11 @@ def display_competition():
             if event in perf_dict:
                 _, score = perf_dict[event]
                 total_score += score
+                norm_event = event_aliases.get(event, event)
+                best_scores_by_event[norm_event] = max(best_scores_by_event.get(norm_event, 0), score)
 
         athlete_rows.append((athlete_id, user, perf_dict, total_score))
 
-    # Sort descending by total_score
     athlete_rows.sort(key=lambda x: x[3], reverse=True)
 
     rank = 0
@@ -283,12 +292,19 @@ def display_competition():
                     perf_str = f"{minutes}min{seconds:.2f}s"
                 else:
                     perf_str = str(perf)
+                    
+                norm_event = event_aliases.get(event, event)
+                if score == best_scores_by_event.get(norm_event):
+                    event_color = "#56D956"
+                else:
+                    event_color = "white"
 
                 cell = f"{perf_str} ({score})<br><i>{cumulative} pts</i>"
             else:
+                event_color = "white"
                 cell = "-"
 
-            html += f"<td style='border: 1px solid black; background-color:{bg_color};'>{cell}</td>"
+            html += f"<td style='border: 1px solid black; color: {event_color}; background-color:{bg_color};'>{cell}</td>"
 
         html += f"<td style='border: 1px solid black; background-color:{bg_color};'><b>{total_score}</b><i>{pb_tag}</i></td></tr>"
 
@@ -421,28 +437,6 @@ def update_decathlon_in_db():
 
         session.commit()
         st.success(f"Performances mises à jour: {updated} – Ajouts: {created}")
-
-# def update_decathlon_in_db():
-    # competition_data = st.session_state["competition_data"]
-    # print()
-    # print("COMPETITION_DATA", type(competition_data))
-    # print()
-    # decathlon_obj = st.session_state["decathlon_object"]
-
-    # try:
-    #     response = requests.post(
-    #         f"{API_URL}/update_or_create_decathlon_performances",
-    #         params={competition_data, decathlon_obj}
-    #     )
-    #     print()
-    #     print(response)
-    #     print()
-    #     if response.status_code == 200:
-    #         st.success("Performances sauvegardées avec succès")
-    #     else:
-    #         st.error("Erreur lors de la sauvegarde des performances")
-    # except Exception as e:
-    #     print(f"Salut la mif: {e}")
 
 # ------------------ Competition Creation ------------------
 def create_competition():
