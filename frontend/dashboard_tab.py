@@ -1,10 +1,12 @@
 import streamlit as st
 import requests
+import streamlit.components.v1 as components
 
 from datetime import date, timedelta
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 import numpy as np
 
 API_URL = "http://localhost:8000"
@@ -66,19 +68,61 @@ training_type_to_event_mapping = {
     "Spécifique - Haut du corps": "Mobilité",
 }
 
+mode = 'session'
+color_map_intensity = {
+    'blue': 1,
+    'green': 3,
+    'yellow': 5,
+    'orange': 7,
+    'red': 9,
+    'brown': 9.7
+}
+color_map_duration = {
+    'blue': 20,
+    'green': 60,
+    'yellow': 100,
+    'orange': 140,
+    'red': 180,
+    'brown': 194
+}
+
 def dashboard_tab():
     st.title("Tableau de bord")
     st.divider()
     athlete = main_header()
     st.divider()
     # ----- Différents composants à organiser ----- #
-    bandeau(athlete)
+    
+    period = st.session_state.period
+    end_date = period[1]
+    start_date = period[0]
+    user_id = athlete["id"]
+
+    response = requests.get(f"{API_URL}/training_data", params={
+        "user_id": user_id,
+        "start_date": start_date,
+        "end_date": end_date
+    })
+    
+    try:
+        response.raise_for_status()
+    except Exception as e:
+        st.error(f"Erreur: {e}")
+        st.stop()
+
+    if response.status_code != 200:
+        st.error("Erreur lors de la récupération des données.")
+        return
+
+    training_data = response.json()
+    
+    bandeau(training_data, period)
     
     col1, _, col2, _, col3 = st.columns([20, 1, 15, 1, 20])
     with col1:
         health_temporal_graph(athlete)
     with col2:
-        training_load(athlete)
+        training_load(training_data, period)
     with col3:
         radar_graph(athlete)
     
@@ -127,37 +171,108 @@ def main_header():
     return athletes_options[selected_athlete]
 
 # ----- Bandeau ----- #
-def bandeau(athlete):
-    st.info("Bandeau des 4 métriques (intensité moyenne des entraînements sur la durée,\
-        durée d'entraînement moyenne sur la durée, santé globale calculée sur base des \
-            infos du check quotidien et pénalisé/régularisé par les infos blessures, \
-                distinguer santé physique et santé physio comme sommeil, blessure, \
-                    mental, stress)")
+def bandeau(training_data, period):
+    #st.info("Bandeau des 4 métriques (intensité moyenne des entraînements sur la durée,\
+    #    durée d'entraînement moyenne sur la durée, santé globale calculée sur base des \
+    #        infos du check quotidien et pénalisé/régularisé par les infos blessures, \
+    #            distinguer santé physique et santé physio comme sommeil, blessure, \
+    #                mental, stress)")
+    
+    col1, _, col2, _, col3, _, col4 = st.columns([10, 1, 10, 1, 10, 1, 10])
+        
+    with col1:
+        data = mean_intensity(training_data, period, mode)
+
+        fig = donut_chart(data, "Intensité moyenne d'entraînement", color_map=color_map_intensity, maxi=10)
+        st.pyplot(fig)
+    with col2:
+        data = mean_duration(training_data, period, mode)
+        
+        fig = donut_chart(data, "Durée moyenne d'entraînement", color_map=color_map_duration, maxi=200)
+        st.pyplot(fig)
+    with col3:
+        data = physical_health_score()
+        data = 3.2
+        
+        fig = donut_chart(data, "Score Physique de Santé", color_map=color_map_intensity, maxi=10)
+        st.pyplot(fig)
+        
+    with col4:
+        data = physiological_health_score()
+        data = 8.9
+        
+        fig = donut_chart(data, "Score Physiologique de Santé", color_map=color_map_intensity, maxi=10)
+        st.pyplot(fig)
+
+def mean_intensity(training_data, period, mode='session'):
+    # mode = 'day' fait la moyenne quotidienne de l'intensité, 'session' fait la moyenne de l'intensité par séance
+    df = pd.DataFrame(training_data)
+    horizon = (period[1]-period[0]).days
+    
+    if df.empty:
+        return 0
+    
+    if mode == 'day':
+        grouped = df.groupby("date").agg({"intensity": 'mean', "duration": 'sum'})
+        res = grouped['intensity'].mean()
+        return res
+    elif mode == 'session':
+        res = df['intensity'].mean()
+        return res
+        
+    return 0.0
+
+def mean_duration(training_data, period, mode='day'):
+    df = pd.DataFrame(training_data)
+    horizon = (period[1]-period[0]).days
+    
+    if df.empty:
+        return 0
+    
+    if mode == 'day':
+        grouped = df.groupby("date").agg({"intensity": 'mean', "duration": 'sum'})
+        res = grouped['duration'].mean()
+        return res
+    elif mode == 'session':
+        res = df['duration'].mean()
+        return res
+        
+    return 0.0
+
+def physical_health_score():
+    pass
+
+def physiological_health_score():
+    pass
+
+def donut_chart(data, title, color_map, maxi):
+    fig, ax = plt.subplots(figsize=(2, 2), facecolor='none')
+
+    percentage = max(0, min(data / maxi, 1))
+
+    values = [percentage, 1 - percentage]
+    colors = [get_color(data, color_map), "none"]
+    wedges, _ = ax.pie(
+        values,
+        startangle=90,
+        colors=colors,
+        radius=1,
+        counterclock=False,
+        wedgeprops={'width': 0.25, 'edgecolor': 'none'}
+    )
+
+    ax.text(0, 0, f"{data:.2f}", ha='center', va='center', fontsize=10, weight='bold', color="white")
+    #ax.set_title(title, fontsize=8, pad=6, color="white")
+    fig.suptitle(title, fontsize=8, y=0.05, color="white")
+
+    ax.set(aspect="equal")
+    plt.box(False)
+    plt.tight_layout()
+    return fig
+
 
 # ----- Charge d'entraînement ----- #
-def training_load(athlete):
-    period = st.session_state.period
-    end_date = period[1]
-    start_date = period[0]
-    user_id = athlete["id"]
-
-    response = requests.get(f"{API_URL}/training_data", params={
-        "user_id": user_id,
-        "start_date": start_date,
-        "end_date": end_date
-    })
-    
-    try:
-        response.raise_for_status()
-    except Exception as e:
-        st.error(f"Erreur: {e}")
-        st.stop()
-
-    if response.status_code != 200:
-        st.error("Erreur lors de la récupération des données.")
-        return
-
-    training_data = response.json()
+def training_load(training_data, period):
     load = compute_training_load(training_data=training_data, period=period)
 
     fig = plot_training_load_gauge(load)
@@ -193,9 +308,9 @@ def plot_training_load_gauge(load):
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=load,
-        number={'suffix': "", 'font': {'size': 32}},
+        number={'suffix': "", 'font': {'color': get_color(load, color_map=color_map_intensity), 'size': 32}},
         domain={'x': [0, 1], 'y': [0, 1]},
-        title={'text': "Training Load", 'font': {'size': 14}},
+        title={'text': "Charge d'entraînement", 'font': {'size': 14}},
         gauge={
             'axis': {'range': [0, 10], 'tickwidth': 1, 'tickcolor': "darkgray"},
             'bar': {'color': "black", 'thickness': 0.25},
@@ -203,12 +318,13 @@ def plot_training_load_gauge(load):
             'borderwidth': 2,
             'bordercolor': None,
             'steps': [
-                {'range': [0, 3], 'color': "#60AF62"}, #4CAF4F
-                {'range': [3, 5], 'color': "#FFC926"}, #FFC107
-                {'range': [5, 7], 'color': "#FFA51F"}, #FF9800
-                {'range': [7, 9], 'color': "#FF4A3D"}, #F44336
-                {'range': [9, 9.7], 'color': "#5C453E"}, #5D4037
-                {'range': [9.7, 10], 'color': "#272727"}, #1B1B1B
+                {'range': [0, 1], 'color': "#24A8F9"},
+                {'range': [1, 3], 'color': "#60AF62"},
+                {'range': [3, 5], 'color': "#FFC926"},
+                {'range': [5, 7], 'color': "#FFA51F"},
+                {'range': [7, 9], 'color': "#FF4A3D"},
+                {'range': [9, 9.7], 'color': "#5C453E"},
+                {'range': [9.7, 10], 'color': "#272727"},
             ],
             'threshold': None
             # {
@@ -305,13 +421,12 @@ def plot_radar(df):
     )
     
     return fig
+
 # ----- Corps Humain 3D ----- #
 def human_body(athlete):
-    st.info("Corps 3D des blessures (le corps en 3D tourne lentement sur lui-même. \
-            points rouges semi transparents qui brillent pour localiser les blessures \
-                et douleurs encore en cours. Possibilité de cliquer sur un point pour avoir \
-                    un tooltip récapitulatif du nom, durée, intensité actuelle)")
-
+    st.info("Human body en 3D avec Three.js, problème de chargement et d'exécution du javascript\
+        pour l'instant, on reviendra là dessus plus tard.")
+    
 # ----- Graphe temporel de santé ----- #
 def health_temporal_graph(athlete):
     st.info("Graphe des métriques temporelles de santé (humeur, qualité de sommeil, durée\
@@ -324,3 +439,20 @@ def injury_graph(athlete):
             spécial pour un début et une fin de blessure avec un emoji sur le point du \
                 graphe)")
 
+
+# ----- HELPERS ----- #
+def get_color(val, color_map):
+    if val <= color_map['blue']:
+        return "#24a8f9"
+    elif val <= color_map['green']:
+        return "#4CAF50"
+    elif val <= color_map['yellow']:
+        return "#FFC107"
+    elif val <= color_map['orange']:
+        return "#FF9800"
+    elif val <= color_map['red']:
+        return "#F44336"
+    elif val <= color_map['brown']:
+        return "#5D4037"
+    else:
+        return "#181818"

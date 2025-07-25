@@ -9,8 +9,13 @@ backend/assets/__pycache__/*
 
 backend/assets/find_curve_coefs.py
 
-
+.DS_Store
 frontend/__pycache__
 frontend/__pycache__/*
+
+frontend/static/
+frontend/static/*
+frontend/static/human_body/
+frontend/static/human_body/*
 
 idees.md

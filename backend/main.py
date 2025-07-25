@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Request, Form#, APIRouter, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse, JSONResponse
-
+from fastapi.staticfiles import StaticFiles
 
 #from typing import Optional
 
@@ -35,6 +35,9 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    
+# Serve static files (like the human body model)
+app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 # === USERS === #
 # --- Créer un.e user ---
