@@ -158,10 +158,22 @@ def display_competition():
     if not competitions:
         st.warning("Aucune compétition trouvée.")
         return
-
+        
     comp_options = {comp["name"]: comp for comp in competitions}
-    selected_name = st.selectbox("Choisir une compétition", list(comp_options.keys()))
+    comp_names = list(comp_options.keys())
+    
+    if "selected_competition_name" not in st.session_state:
+        st.session_state.selected_competition_name = comp_names[0]
+    
+    selected_name = st.selectbox(
+        "Choisir une compétition",
+        comp_names,
+        index=comp_names.index(st.session_state.selected_competition_name) if st.session_state.selected_competition_name in comp_names else 0,
+        key="selected_competition_name"
+    )
+    
     selected_comp = comp_options[selected_name]
+    st.session_state["selected_competition"] = selected_comp
 
     performances = fetch_performances_cached(selected_comp["id"])
     if not performances:
