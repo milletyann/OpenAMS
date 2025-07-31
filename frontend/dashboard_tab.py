@@ -77,6 +77,14 @@ color_map_intensity = {
     'red': 9,
     'brown': 9.7
 }
+inverse_color_map_intensity = {
+    'blue': 8.5,
+    'green': 7,
+    'yellow': 5,
+    'orange': 4,
+    'red': 3,
+    'brown': 0.5,
+}
 color_map_duration = {
     'blue': 20,
     'green': 60,
@@ -178,30 +186,38 @@ def bandeau(training_data, period):
     #            distinguer santé physique et santé physio comme sommeil, blessure, \
     #                mental, stress)")
     
-    col1, _, col2, _, col3, _, col4 = st.columns([10, 1, 10, 1, 10, 1, 10])
+    col1, _, col2, _, col3, _, col4, _, col5 = st.columns([10, 1, 10, 1, 10, 1, 10, 1, 10])
         
     with col1:
         data = mean_intensity(training_data, period, mode)
 
-        fig = donut_chart(data, "Intensité moyenne d'entraînement", color_map=color_map_intensity, maxi=10)
+        fig = donut_chart(data, "Intensité moyenne d'entraînement", color_map=color_map_intensity, maxi=10, suffix='/10', bb=True)
         st.pyplot(fig)
     with col2:
         data = mean_duration(training_data, period, mode)
         
-        fig = donut_chart(data, "Durée moyenne d'entraînement", color_map=color_map_duration, maxi=200)
+        fig = donut_chart(data, "Durée moyenne d'entraînement", color_map=color_map_duration, maxi=200, suffix=' min', bb=True)
         st.pyplot(fig)
+        
     with col3:
+        data = recovery_score()
+        data = 9.7
+        
+        fig = donut_chart(data, "Score de Récupération", color_map=inverse_color_map_intensity, maxi=10, suffix='/10', bb=False)
+        st.pyplot(fig)
+
+    with col4:
         data = physical_health_score()
         data = 3.2
         
-        fig = donut_chart(data, "Score Physique de Santé", color_map=color_map_intensity, maxi=10)
+        fig = donut_chart(data, "Score Physique de Santé", color_map=inverse_color_map_intensity, maxi=10, suffix='/10', bb=False)
         st.pyplot(fig)
-        
-    with col4:
+
+    with col5:
         data = physiological_health_score()
         data = 8.9
         
-        fig = donut_chart(data, "Score Physiologique de Santé", color_map=color_map_intensity, maxi=10)
+        fig = donut_chart(data, "Score Physiologique de Santé", color_map=inverse_color_map_intensity, maxi=10, suffix='/10', bb=False)
         st.pyplot(fig)
 
 def mean_intensity(training_data, period, mode='session'):
@@ -239,19 +255,26 @@ def mean_duration(training_data, period, mode='day'):
         
     return 0.0
 
+def recovery_score():
+    return
+
 def physical_health_score():
-    pass
+    return
 
 def physiological_health_score():
-    pass
+    return
 
-def donut_chart(data, title, color_map, maxi):
+def donut_chart(data, title, color_map, maxi, suffix, bb=True): # bb = bottom best, true if it's bad to have a too high score
     fig, ax = plt.subplots(figsize=(2, 2), facecolor='none')
 
     percentage = max(0, min(data / maxi, 1))
 
     values = [percentage, 1 - percentage]
-    colors = [get_color(data, color_map), "none"]
+    if bb:
+        colors = [get_color(data, color_map), "none"]
+    else:
+        colors = [get_inverse_color(data, color_map), "none"]
+        
     wedges, _ = ax.pie(
         values,
         startangle=90,
@@ -261,7 +284,7 @@ def donut_chart(data, title, color_map, maxi):
         wedgeprops={'width': 0.25, 'edgecolor': 'none'}
     )
 
-    ax.text(0, 0, f"{data:.2f}", ha='center', va='center', fontsize=10, weight='bold', color="white")
+    ax.text(0, 0, f"{data:.2f}\n{suffix}", ha='center', va='center', fontsize=10, weight='bold', color="white")
     #ax.set_title(title, fontsize=8, pad=6, color="white")
     fig.suptitle(title, fontsize=8, y=0.05, color="white")
 
@@ -456,3 +479,28 @@ def get_color(val, color_map):
         return "#5D4037"
     else:
         return "#181818"
+
+def get_inverse_color(val, color_map):
+    if val >= color_map['blue']:
+        return "#24a8f9"
+    elif val >= color_map['green']:
+        return "#4CAF50"
+    elif val >= color_map['yellow']:
+        return "#FFC107"
+    elif val >= color_map['orange']:
+        return "#FF9800"
+    elif val >= color_map['red']:
+        return "#F44336"
+    elif val >= color_map['brown']:
+        return "#5D4037"
+    else:
+        return "#181818"
+    
+inverse_color_map_intensity = {
+    'blue': 8.5,
+    'green': 7,
+    'yellow': 5,
+    'orange': 4,
+    'red': 3,
+    'brown': 0.5,
+}
