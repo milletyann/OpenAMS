@@ -11,6 +11,9 @@ dependencies:
   - streamlit
   - pandas
   - numpy
+  - scipy
+  - matplotlib
+  - plotly
   - altair
   - pydantic
   - requests
