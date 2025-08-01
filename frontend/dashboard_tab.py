@@ -68,7 +68,7 @@ training_type_to_event_mapping = {
     "Spécifique - Haut du corps": "Mobilité",
 }
 
-mode = 'session'
+mode = 'day'
 color_map_intensity = {
     'blue': 1,
     'green': 3,
@@ -99,7 +99,6 @@ def dashboard_tab():
     st.divider()
     athlete = main_header()
     st.divider()
-    # ----- Différents composants à organiser ----- #
     
     period = st.session_state.period
     end_date = period[1]
@@ -180,8 +179,8 @@ def main_header():
 
 # ----- Bandeau ----- #
 def bandeau(training_data, period):
-    #st.info("Bandeau des 4 métriques (intensité moyenne des entraînements sur la durée,\
-    #    durée d'entraînement moyenne sur la durée, santé globale calculée sur base des \
+    #st.info("Bandeau des 5 métriques (intensité moyenne des entraînements sur la durée,\
+    #    durée d'entraînement moyenne sur la durée, score de récupération, santé globale calculée sur base des \
     #        infos du check quotidien et pénalisé/régularisé par les infos blessures, \
     #            distinguer santé physique et santé physio comme sommeil, blessure, \
     #                mental, stress)")

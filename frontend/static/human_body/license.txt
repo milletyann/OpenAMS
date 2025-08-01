@@ -1,0 +1,11 @@
+Model Information:
+* title:	Human Body Base Mesh
+* source:	https://sketchfab.com/3d-models/human-body-base-mesh-7e27f8c7c3fa4657865011a683927e4c
+* author:	3Dimentional (https://sketchfab.com/insectscorch)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Human Body Base Mesh" (https://sketchfab.com/3d-models/human-body-base-mesh-7e27f8c7c3fa4657865011a683927e4c) by 3Dimentional (https://sketchfab.com/insectscorch) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

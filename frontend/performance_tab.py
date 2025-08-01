@@ -19,6 +19,7 @@ sport_disciplines = {
 }
 
 # --- Athlétisme --- #
+muscu = ['Muscu - Force', 'Muscu - Puissance', 'Muscu - Explosivité']
 throws = ['Disque', 'Javelot', 'Poids']
 jumps = ['Longueur', 'Hauteur', 'Perche']
 races = ['60m', '60mH', '100m', '100mH', '110mH', '200m', '400m', '800m', '1000m', '1500m']
@@ -26,7 +27,7 @@ events_athle = throws + jumps + races
 
 # --- Lists for performance sorting --- #
 disciplines_to_min = races + sport_disciplines['Volley-ball']
-disciplines_to_max = jumps + throws + ["Décathlon", "Heptathlon"] + sport_disciplines['Mobilité']
+disciplines_to_max = jumps + throws + ["Décathlon", "Heptathlon"] + sport_disciplines['Mobilité'] + muscu
 
 # --- Units --- #
 unites = ["centimètres", "secondes", "points", "kg"]

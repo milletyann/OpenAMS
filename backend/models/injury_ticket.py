@@ -51,13 +51,12 @@ class BodyArea(str, Enum):
 class PhysicalIssueTicket(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
-    date_opened: date
+    date_opened: str
     athlete_id: int = Field(foreign_key="user.id")
     area_concerned: BodyArea
     injury_type: InjuryType
     notes: Optional[str] = None
-    date_closed: Optional[date] = None
-    closed_reason: Optional[str] = None
+    is_closed: bool
 
     followups: List["PhysicalIssueFollowUp"] = Relationship(back_populates="ticket")
 
@@ -65,7 +64,7 @@ class PhysicalIssueTicket(SQLModel, table=True):
 class PhysicalIssueFollowUp(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     ticket_id: int = Field(foreign_key="physicalissueticket.id")
-    date: date
+    date: str
     pain_intensity: int
     capacity_restriction: str
     status_notes: Optional[str] = None

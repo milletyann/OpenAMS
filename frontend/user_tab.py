@@ -88,7 +88,7 @@ def update_user(user):
             index=("Athlète", "Coach").index(user["role"]),
             key=f"role_{user['id']}",
         )
-        new_age = st.number_input("Âge", min_value=10, max_value=100, value=user["age"], key=f"age_{user['id']}")
+        new_age = st.number_input("Âge", min_value=0, max_value=100, value=user["age"], key=f"age_{user['id']}")
         new_sexe = st.selectbox(
             "Sexe",
             ("M", "F", "Autre"),

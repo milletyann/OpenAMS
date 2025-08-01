@@ -2,7 +2,7 @@ import streamlit as st
 from sqlmodel import Session, select
 import requests
 import pandas as pd
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, time
 from backend.models.enumeration import Role
 from backend.models.user import User
 from backend.models.injury_ticket import InjuryType, BodyArea
@@ -28,7 +28,6 @@ def health_tab():
         create_physical_issue()
     with col3:
         add_followup()
-        
     
 def fetch_athletes():
     """
@@ -45,6 +44,7 @@ def fetch_athletes():
         st.error(f"Error loading athletes: {e}")
         return []
 
+# Health check
 def display_health_check():
     st.subheader("Check Santé Matinal - 7 derniers jours")
 
@@ -73,13 +73,18 @@ def display_health_check():
                 "date",
                 "muscle_soreness",
                 "sleep_quality",
+                "sleep_duration",
+                "wakeup_time",
                 "energy_level",
+                "stress_level",
                 "mood",
                 "resting_heart_rate",
                 "hand_grip_test",
                 "longest_expiration_test",
+                "single_leg_proprio_test",
                 "notes",
             ]
+            
             # Filter out missing columns (in case backend changes)
             df = df[[col for col in desired_columns if col in df.columns]]
             
@@ -116,20 +121,43 @@ def add_daily_health_check():
     athlete_options = {athlete["name"]: athlete["id"] for athlete in athletes}
 
     with st.form("health_check_form", clear_on_submit=True):
-        date_value = st.date_input("Date", value=date.today(), max_value=date.today())
         
         athlete_name = st.selectbox("Select athlete", list(athlete_options.keys()))
         athlete_id = athlete_options[athlete_name]
+        
+        date_value = st.date_input("Date", value=date.today(), max_value=date.today())
 
-        muscle_soreness = st.slider("Fatigue Musculaire (1-10)", 0, 10, 5)
+        
+        # sleep
+        st.divider()
+        st.subheader('Sommeil')
         sleep_quality = st.slider("Qualité du sommeil (1-10)", 0, 10, 5)
-        energy_level = st.slider("Niveau d'énergie (1-10)", 0, 10, 5)
+        sleep_duration = st.number_input(
+            "Durée de sommeil",
+            min_value=0.0,
+            step=0.5,
+            format="%.1f",
+            placeholder="Optional",
+        )
+        wakeup_time = st.time_input("heure de réveil", time(7, 0))
+        
+        st.divider()
+        st.subheader('Psychologie/Mental')
+        stress_level = st.slider("Niveau de stress (1-10)", 0, 10, 0)
 
         mood = st.selectbox(
             "Mood",
             ["Joyeux", "Enthousiasme", "Motivé", "Neutre", "Las", "Stressé", "Triste"]
         )
 
+        st.divider()
+        st.subheader('Énergie/Fatigue')
+        muscle_soreness = st.slider("Fatigue Musculaire (1-10)", 0, 10, 5)
+        energy_level = st.slider("Niveau d'énergie (1-10)", 0, 10, 5)
+
+        # tests
+        st.divider()
+        st.subheader('Tests qualitatifs')
         resting_heart_rate = st.number_input(
             "Fréquence Cardiaque au repos (bpm)",
             min_value=0,
@@ -152,6 +180,15 @@ def add_daily_health_check():
             placeholder="Optional",
         )
 
+        single_leg_proprio_test = st.number_input(
+            "Test de proprioception sur une jambe (s)",
+            min_value=0,
+            format="%d",
+            placeholder="Optional",
+        )
+
+        st.divider()
+        st.subheader('Infos additionnelles')
         notes = st.text_area("Notes", placeholder="Optional")
 
         submitted = st.form_submit_button("Soumettre")
@@ -161,15 +198,19 @@ def add_daily_health_check():
                 st.error("Impossible de choisir une date future. Choisissez une date antérieure ou aujourd'hui.")
             else:
                 payload = {
-                    "date": str(date_value),
+                    "date": date_value.isoformat(),
                     "athlete_id": athlete_id,
                     "muscle_soreness": muscle_soreness,
                     "sleep_quality": sleep_quality,
+                    "sleep_duration": sleep_duration,
+                    "wakeup_time": wakeup_time.strftime("%H:%M"),
                     "energy_level": energy_level,
+                    "stress_level": stress_level,
                     "mood": mood,
                     "resting_heart_rate": resting_heart_rate if resting_heart_rate > 0 else None,
                     "hand_grip_test": hand_grip_test if hand_grip_test > 0 else None,
                     "longest_expiration_test": longest_expiration_test if longest_expiration_test > 0 else None,
+                    "single_leg_proprio_test": single_leg_proprio_test if single_leg_proprio_test > 0 else None,
                     "notes": notes if notes else None,
                 }
 
@@ -184,10 +225,14 @@ def add_daily_health_check():
                     if response.status_code == 200:
                         st.success("Check santé enregistré avec succès.")
                     else:
-                        st.error(f"Erreur: {response.json().get('detail')}")
+                        try:
+                            st.error(f"Erreur: {response.json().get('detail')}")
+                        except ValueError:
+                            st.error(f"Erreur {response.status_code}: {response.text}")
                 except Exception as e:
                     st.error(f"Requête échouée: {e}")
 
+# Physical issue + Followup
 def create_physical_issue():
     st.subheader("Créer un ticket de blessure")
     with Session(engine) as session:
@@ -210,7 +255,8 @@ def create_physical_issue():
                 "title": title,
                 "area_concerned": area,
                 "injury_type": injury,
-                "notes": notes or None
+                "notes": notes or None,
+                "is_closed": False
             }
             resp = requests.post(f"{API_URL}/issues/", json=payload)
             if resp.status_code == 200:

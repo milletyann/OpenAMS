@@ -6,14 +6,14 @@ from fastapi.staticfiles import StaticFiles
 #from typing import Optional
 
 from sqlmodel import select, Session
-from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, CoachTrainingLinks
+from backend.models import User, UserCreate, TrainingSession, UserTrainingLinks, Performance, HealthCheck, HealthCheckCreate, CoachTrainingLinks
 from backend.models.injury_ticket import PhysicalIssueTicket, PhysicalIssueFollowUp, InjuryType, BodyArea
 from backend.models.decathlon import Decathlon, DecathlonPerformance, DecathlonAthleteLink
 from backend.models.enumeration import Role
 from backend.database import init_db, get_session
 from typing import List
 
-from datetime import date
+from datetime import date, time
 from pydantic import BaseModel
 from backend.assets.hungarian import compute_hungarian_score
 
@@ -281,11 +281,16 @@ def get_decathlon_athletes(decathlon_id: int, session: Session = Depends(get_ses
 # === HEALTH === #
 # Créer un HealthCheck
 @app.post("/health-checks/", response_model=HealthCheck)
-def create_health_check(health_check: HealthCheck, session: Session = Depends(get_session)):
-    # Check for duplicate record
+def create_health_check(
+    daily_check: HealthCheckCreate, session: Session = Depends(get_session)
+):
+    print()
+    print("DATA: ", daily_check)
+    print()
+    # Check for duplicate
     statement = select(HealthCheck).where(
-        (HealthCheck.date == health_check.date) &
-        (HealthCheck.athlete_id == health_check.athlete_id)
+        (HealthCheck.date == daily_check.date) &
+        (HealthCheck.athlete_id == daily_check.athlete_id)
     )
     existing = session.exec(statement).first()
     if existing:
@@ -293,9 +298,18 @@ def create_health_check(health_check: HealthCheck, session: Session = Depends(ge
             status_code=400,
             detail="A health check already exists for this athlete on this date."
         )
+
+    # Convert input schema to DB model
+    health_check = HealthCheck(**daily_check.dict())
+    print()
+    print("HEALTH_CHECK: ", health_check)
+    print()
+
     session.add(health_check)
     session.commit()
+    session.flush()
     session.refresh(health_check)
+
     return health_check
 
 # Récupérer les HealthCheck
@@ -310,11 +324,16 @@ def get_all_health_checks(session: Session = Depends(get_session)):
 def get_health_checks_by_athlete(athlete_id: int, session: Session = Depends(get_session)):
     statement = select(HealthCheck).where(HealthCheck.athlete_id == athlete_id)
     results = session.exec(statement).all()
+    results = [r for r in results if r is not None]
     return results
 
 # Créer un nouveau ticket
 @app.post("/issues/", response_model=PhysicalIssueTicket)
 def create_issue(ticket: PhysicalIssueTicket, session: Session = Depends(get_session)):
+    print()
+    print(ticket)
+    print()
+    
     session.add(ticket)
     session.commit()
     session.refresh(ticket)
