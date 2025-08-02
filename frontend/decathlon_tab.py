@@ -89,7 +89,12 @@ def fetch_user_best_total_score(user_id: int, discipline: str):
     resp = requests.get(f"{API_URL}/get_pb", params={"user_id": user_id, "discipline": discipline})
     if resp.status_code == 200:
         return resp.json()
-    return 0
+    return {
+            "performance": 0,
+            "score": 0,
+            "unit": None,
+            "date": None
+        }
 
 def fetch_athletes_in_deca(decathlon_id: int):
     resp = requests.get(f"{API_URL}/athletes_in_decathlon?decathlon_id={decathlon_id}")
@@ -293,6 +298,12 @@ def display_competition():
                 perf, score = perf_dict[event]
                 cumulative += score
 
+                if perf in ['NM', 'DNS', 'DNF']:
+                    unit = 'fail' # trick to avoid next if statements and still execute rest of the loop lines
+                else:
+                    perf = float(perf)
+                    
+
                 if unit == "m":
                     perf /= 100
                     perf_str = f"{perf:.2f}m"
@@ -415,7 +426,6 @@ def update_decathlon_in_db():
                 try:
                     perf_val = float(perf_str)
                     score = compute_score_remote(event, sexe, perf_val)
-                    print(score)
 
                     existing = session.exec(
                         select(DecathlonPerformance)
@@ -441,8 +451,37 @@ def update_decathlon_in_db():
                         session.add(new_perf)
                         created += 1
 
+                # PAS TROUVÉ MIEUX POUR VÉRIFIER QUE LA PERF EST UN NM/DNS/DNF
                 except ValueError:
-                    st.warning(f"Performance invalide: {perf_str} pour {athlete.name} ({event})")
+                    if perf_str in ['NM', 'DNS', 'DNF']:
+                        perf_val = perf_str
+                        score = 0
+                        
+                        existing = session.exec(
+                            select(DecathlonPerformance)
+                            .where(DecathlonPerformance.decathlon_id == decathlon_id)
+                            .where(DecathlonPerformance.user_id == user_id)
+                            .where(DecathlonPerformance.event == event)
+                        ).first()
+                        
+                        if existing:
+                            existing.performance = perf_val
+                            existing.score = score
+                            existing.date = comp_date
+                            updated += 1
+                        else:
+                            new_perf = DecathlonPerformance(
+                                decathlon_id=decathlon_id,
+                                user_id=user_id,
+                                event=event,
+                                performance=perf_val,
+                                score=score,
+                                date=comp_date
+                            )
+                            session.add(new_perf)
+                            created += 1
+                    else:
+                        st.warning(f"Performance invalide: {perf_str} pour {athlete.name} ({event})")
                 except Exception as e:
                     session.rollback()
                     st.warning(f"Erreur pour {athlete.name} - {event}: {e}")
@@ -516,7 +555,13 @@ def render_decathlon_table(edit_mode):
                             total_score += score
                             row_data[event] = perf
                         except ValueError:
-                            st.warning("Entrée invalide")
+                            if perf in ['NM', 'DNS', 'DNF']:
+                                perf_val = str(perf)
+                                score = 0
+                                st.markdown("**Score**: 0")
+                                row_data[event] = perf
+                            else:
+                                st.warning("Entrée invalide")
             with cols[10]:
                 st.markdown(f"**Total** {total_score}")
             competition_data[athlete.id] = row_data
@@ -624,13 +669,27 @@ def create_competition_in_db():
                     session.add(performance)
 
                 except Exception as e:
-                    st.warning(f"Erreur: {e} sur athlète {athlete.id} - Skipping")
+                    if perf_val in ['NM', 'DNS', 'DNF']:
+                        perf_val = str(perf_val)
+                        score = 0
+
+                        performance = DecathlonPerformance(
+                            decathlon_id=comp.id,
+                            user_id=user_id,
+                            event=event,
+                            performance=perf_val,
+                            score=score,
+                            date=date.today()
+                        )
+                        session.add(performance)
+                    else:
+                        st.warning(f"Erreur: {e} sur athlète {athlete.id} - Skipping")
                     continue
                 
         # 4. Final commit
         session.commit()
         st.success("Compétition sauvegardée")
-  
+
 # ---------- HELPERS ----------- #
 def compute_ranking(athlete_map, selected_sexes):
     ranking_data = []
@@ -665,6 +724,16 @@ def compute_ranking(athlete_map, selected_sexes):
                 event_score = perf_dict[event][1]
 
                 unit = unit_mapping.get(event, "")
+                
+                # traiter les perfs non marquées (NM/DNS/DNF)
+                if raw_perf in ['NM', 'DNS', 'DNF']:
+                    formatted_perf = str(raw_perf)
+                    event_score = 0
+                    unit = 'fail' # in order to skip next if statements and still add the performance to the df
+                else:
+                    raw_perf = float(raw_perf)
+                    
+                    
                 if unit == "m":
                     raw_perf /= 100
                     formatted_perf = f"{raw_perf:.2f}m"
@@ -684,6 +753,7 @@ def compute_ranking(athlete_map, selected_sexes):
 
             if event == "110mH" or event == "100mH":
                 event = "110mH/100mH"
+            
             event_scores_map[event].append(
                 (name, cumulative_score, event_score, formatted_perf, sexe)
             )

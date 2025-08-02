@@ -15,7 +15,7 @@ class DecathlonPerformance(SQLModel, table=True):
     #user_id: uuid.UUID = Field(foreign_key="user.id")
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     event: str
-    performance: Optional[float] = None
+    performance: Optional[str] = None
     score: Optional[int] = None
     date: date
 
