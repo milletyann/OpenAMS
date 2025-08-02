@@ -669,8 +669,8 @@ def create_competition_in_db():
                     session.add(performance)
 
                 except Exception as e:
-                    if perf_val in ['NM', 'DNS', 'DNF']:
-                        perf_val = str(perf_val)
+                    if perf_str in ['NM', 'DNS', 'DNF']:
+                        perf_val = str(perf_str)
                         score = 0
 
                         performance = DecathlonPerformance(

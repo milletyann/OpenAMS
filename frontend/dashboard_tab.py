@@ -160,20 +160,20 @@ def main_header():
     default_start = date.today() - timedelta(days=7)
     default_end = date.today()
     with col2:
-        start, end = st.date_input(
+        period = st.date_input(
             "Période",
             value=(default_start, default_end),
             min_value= date.today() - timedelta(days=60),
             max_value= date.today()
         )
+        
+        if isinstance(period, tuple) and len(period) == 2:
+            start, end = period
+            if (end - start).days < 7:
+                st.warning("La période doit être d’au moins 7 jours.")
+                st.stop()
 
-        if (end - start).days < 7:
-            st.warning("La période doit être d’au moins 7 jours.")
-            st.stop()
-
-        st.session_state.period = (start, end)
-    
-    st.session_state.period = (start, end)
+            st.session_state.period = (start, end)
     
     return athletes_options[selected_athlete]
 
