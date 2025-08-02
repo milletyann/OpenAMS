@@ -98,7 +98,7 @@ def recovery_score(measurements):
     metric_names = metrics_data.keys()
     weight_sum = 0
     for metric, value in measurements.items():
-        if metric in metric_names:
+        if metric in metric_names and value: # 'and value' pour skip les valeurs None (les 4 tests optionnels s'ils ne sont pas renseignés)
             score, weight = normalize_metric(value, metric)
             weight_sum += weight
             normalized_scores.append(score)

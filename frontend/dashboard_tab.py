@@ -68,7 +68,7 @@ training_type_to_event_mapping = {
     "Spécifique - Haut du corps": "Mobilité",
 }
 
-mode = 'day'
+mode = 'session'
 color_map_intensity = {
     'blue': 1,
     'green': 3,
@@ -123,7 +123,7 @@ def dashboard_tab():
 
     training_data = response.json()
     
-    bandeau(training_data, period)
+    bandeau(training_data, period, user_id)
     
     col1, _, col2, _, col3 = st.columns([20, 1, 15, 1, 20])
     with col1:
@@ -178,7 +178,7 @@ def main_header():
     return athletes_options[selected_athlete]
 
 # ----- Bandeau ----- #
-def bandeau(training_data, period):
+def bandeau(training_data, period, athlete_id):
     #st.info("Bandeau des 5 métriques (intensité moyenne des entraînements sur la durée,\
     #    durée d'entraînement moyenne sur la durée, score de récupération, santé globale calculée sur base des \
     #        infos du check quotidien et pénalisé/régularisé par les infos blessures, \
@@ -199,8 +199,7 @@ def bandeau(training_data, period):
         st.pyplot(fig)
         
     with col3:
-        data = recovery_score()
-        data = 9.7
+        data = recovery_score(athlete_id)
         
         fig = donut_chart(data, "Score de Récupération", color_map=inverse_color_map_intensity, maxi=10, suffix='/10', bb=False)
         st.pyplot(fig)
@@ -254,8 +253,28 @@ def mean_duration(training_data, period, mode='day'):
         
     return 0.0
 
-def recovery_score():
-    return
+def recovery_score(athlete_id):
+    end_date = st.session_state.get("period")[1]
+    daily_measurements = requests.get(f"{API_URL}/health-checks/by-athlete/{athlete_id}/{end_date}").json()
+    if daily_measurements is None:
+        return 0
+    else:
+        daily_measurements = {
+            'sleep_quality': daily_measurements["sleep_quality"], 
+            'sleep_duration': daily_measurements["sleep_duration"], 
+            'resting_heart_rate': daily_measurements["resting_heart_rate"], 
+            'hand_grip_test': daily_measurements["hand_grip_test"], 
+            'longest_expiration_test': daily_measurements["longest_expiration_test"], 
+            'single_leg_proprio_test': daily_measurements["single_leg_proprio_test"], 
+        }
+
+    response = requests.post(f"{API_URL}/compute_recovery_score/", json=daily_measurements)
+
+    if response.status_code == 200:
+        score = response.json().get("recovery_score")
+        return score
+    else:
+        return 0
 
 def physical_health_score():
     return
@@ -291,7 +310,6 @@ def donut_chart(data, title, color_map, maxi, suffix, bb=True): # bb = bottom be
     plt.box(False)
     plt.tight_layout()
     return fig
-
 
 # ----- Charge d'entraînement ----- #
 def training_load(training_data, period):

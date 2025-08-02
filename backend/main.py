@@ -11,11 +11,12 @@ from backend.models.injury_ticket import PhysicalIssueTicket, PhysicalIssueFollo
 from backend.models.decathlon import Decathlon, DecathlonPerformance, DecathlonAthleteLink
 from backend.models.enumeration import Role
 from backend.database import init_db, get_session
-from typing import List
+from typing import List, Optional
 
 from datetime import date, time
 from pydantic import BaseModel
 from backend.assets.hungarian import compute_hungarian_score
+from backend.assets.metrics_compute import recovery_score
 
 app = FastAPI()
 
@@ -284,9 +285,6 @@ def get_decathlon_athletes(decathlon_id: int, session: Session = Depends(get_ses
 def create_health_check(
     daily_check: HealthCheckCreate, session: Session = Depends(get_session)
 ):
-    print()
-    print("DATA: ", daily_check)
-    print()
     # Check for duplicate
     statement = select(HealthCheck).where(
         (HealthCheck.date == daily_check.date) &
@@ -301,9 +299,6 @@ def create_health_check(
 
     # Convert input schema to DB model
     health_check = HealthCheck(**daily_check.dict())
-    print()
-    print("HEALTH_CHECK: ", health_check)
-    print()
 
     session.add(health_check)
     session.commit()
@@ -327,13 +322,36 @@ def get_health_checks_by_athlete(athlete_id: int, session: Session = Depends(get
     results = [r for r in results if r is not None]
     return results
 
+# Récupérer le HealthCheck quotidien d'un athlète
+@app.get("/health-checks/by-athlete/{athlete_id}/{end_date}", response_model=HealthCheck)
+def get_today_health_check(athlete_id: int, end_date: date = date.today(), session: Session = Depends(get_session)):
+    statement = select(HealthCheck).where(
+        (HealthCheck.athlete_id == athlete_id) &
+        (HealthCheck.date == end_date)
+    )
+    result = session.exec(statement).first()
+    if result:
+        return {
+            "sleep_duration": result.sleep_duration,
+            "sleep_quality": result.sleep_quality,
+            "resting_heart_rate": result.resting_heart_rate,
+            "hand_grip_test": result.hand_grip_test,
+            "longest_expiration_test": result.longest_expiration_test,
+            "one_leg_proprio_test": result.single_leg_proprio_test,
+        }
+    else:
+        return {
+            "sleep_duration": 0,
+            "sleep_quality": 0,
+            "resting_heart_rate": 0,
+            "hand_grip_test": 0,
+            "longest_expiration_test": 0,
+            "one_leg_proprio_test": 0,
+        }
+
 # Créer un nouveau ticket
 @app.post("/issues/", response_model=PhysicalIssueTicket)
 def create_issue(ticket: PhysicalIssueTicket, session: Session = Depends(get_session)):
-    print()
-    print(ticket)
-    print()
-    
     session.add(ticket)
     session.commit()
     session.refresh(ticket)
@@ -365,3 +383,17 @@ def get_athlete_issues(athlete_id: int, session: Session = Depends(get_session))
 @app.get("/issues/{ticket_id}/followups/", response_model=list[PhysicalIssueFollowUp])
 def get_issue_followups(ticket_id: int, session: Session = Depends(get_session)):
     return session.exec(select(PhysicalIssueFollowUp).where(PhysicalIssueFollowUp.ticket_id == ticket_id).order_by(PhysicalIssueFollowUp.date)).all()
+
+# Calculer le score de récupération et le renvoyer au frontend
+class DailyMetrics(BaseModel):
+    sleep_quality: float
+    sleep_duration: float
+    resting_heart_rate: Optional[float] = None
+    hand_grip_test: Optional[float] = None
+    longest_expiration_test: Optional[float] = None
+    one_leg_proprio_test: Optional[float] = None
+    
+@app.post("/compute_recovery_score/")
+def compute_recovery_score(data: DailyMetrics):
+    score = recovery_score(data.dict())
+    return JSONResponse({"recovery_score": score})
