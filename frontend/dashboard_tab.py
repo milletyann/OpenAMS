@@ -68,7 +68,7 @@ training_type_to_event_mapping = {
     "Spécifique - Haut du corps": "Mobilité",
 }
 
-mode = 'session'
+mode = 'day'
 color_map_intensity = {
     'blue': 1,
     'green': 3,
@@ -228,7 +228,7 @@ def mean_intensity(training_data, period, mode='session'):
     
     if mode == 'day':
         grouped = df.groupby("date").agg({"intensity": 'mean', "duration": 'sum'})
-        res = grouped['intensity'].mean()
+        res = grouped['intensity'].sum()/(horizon+1)
         return res
     elif mode == 'session':
         res = df['intensity'].mean()
@@ -245,7 +245,7 @@ def mean_duration(training_data, period, mode='day'):
     
     if mode == 'day':
         grouped = df.groupby("date").agg({"intensity": 'mean', "duration": 'sum'})
-        res = grouped['duration'].mean()
+        res = grouped['duration'].sum()/(horizon+1)
         return res
     elif mode == 'session':
         res = df['duration'].mean()
