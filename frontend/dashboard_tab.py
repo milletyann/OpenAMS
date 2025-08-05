@@ -12,60 +12,79 @@ import numpy as np
 API_URL = "http://localhost:8000"
 
 training_type_to_event_mapping = {
-    "Sprint - Technique": "Sprint", 
-    "Sprint - Lactique": "Lactique", 
-    "Course - Aérobie": "Aérobie", 
-    "Sprint - Départ": "Sprint", 
-    "Sprint - Haies": "Haies", 
-    "Longueur - Technique": "Longueur",
-    "Longueur - Élan réduit": "Longueur", 
-    "Longueur - Élan complet": "Longueur", 
-    "Longueur - Prise de marques": "Longueur", 
-    "Longueur - Courses d'élan": "Longueur", 
-    "Hauteur - Technique": "Hauteur",
-    "Hauteur - Élan réduit": "Hauteur", 
-    "Hauteur - Élan complet": "Hauteur", 
-    "Hauteur - Prise de marques": "Hauteur", 
-    "Hauteur - Courses d'élan": "Hauteur", 
-    "Perche - Technique": "Perche",
-    "Perche - Élan réduit": "Perche", 
-    "Perche - Élan complet": "Perche", 
-    "Perche - Prise de marques": "Perche", 
-    "Perche - Courses d'élan": "Perche", 
-    "Poids - Technique": "Poids", 
-    "Poids - Élan réduit": "Poids", 
-    "Poids - Élan complet": "Poids", 
-    "Disque - Technique": "Disque", 
-    "Disque - Élan réduit": "Disque", 
-    "Disque - Élan complet": "Disque", 
-    "Javelot - Technique": "Javelot", 
-    "Javelot - Élan réduit": "Javelot", 
-    "Javelot - Élan complet": "Javelot", 
-    "Lancer - PPG": "Muscu", 
-    "Muscu - Force": "Muscu", 
-    "Muscu - Puissance": "Muscu", 
-    "Muscu - Explosivité": "Muscu", 
-    "PPG": "Muscu", 
-    "Bondissements": "Muscu", 
-    "Compétition - Décathlon": "Compétition", 
-    "Compétition - 100m": "Compétition", 
-    "Compétition - Longueur": "Compétition", 
-    "Compétition - Poids": "Compétition", 
-    "Compétition - Hauteur": "Compétition", 
-    "Compétition - 400m": "Compétition", 
-    "Compétition - 110mH": "Compétition", 
-    "Compétition - Disque": "Compétition", 
-    "Compétition - Perche": "Compétition", 
-    "Compétition - Javelot": "Compétition", 
-    "Compétition - 1500m": "Compétition",
+    "Sprint - Technique": {"sport": "Sprint", "type": "Technique"},
+    "Sprint - Lactique": {"sport": "", "type": "Lactique"}, 
+    "Sprint - Départ": {"sport": "Sprint", "type": "Départ"}, 
+    "Sprint - Gammes": {"sport": "Sprint", "type": "Gammes"},
+    "Sprint - Haies": {"sport": "Haies", "type": "Technique"}, 
+    "Haies - Gammes": {"sport": "Haies", "type": "Gammes"},
     
-    "Général": "Mobilité", 
-    "Spécifique - Épaules": "Mobilité", 
-    "Spécifique - Hanches": "Mobilité", 
-    "Spécifique - Dos": "Mobilité", 
-    "Spécifique - Jambes": "Mobilité", 
-    "Spécifique - Bas du corps": "Mobilité", 
-    "Spécifique - Haut du corps": "Mobilité",
+    "Course - Aérobie Haute": {"sport": "Aérobie", "type": "Intervalles"}, 
+    "Course - Aérobie Basse": {"sport": "Aérobie", "type": "EF"}, 
+    
+    "Longueur - Technique": {"sport": "Longueur", "type": "Technique"},
+    "Longueur - Élan réduit": {"sport": "Longueur", "type": ""}, 
+    "Longueur - Élan complet": {"sport": "Longueur", "type": ""}, 
+    "Longueur - Prise de marques": {"sport": "Longueur", "type": ""}, 
+    "Longueur - Courses d'élan": {"sport": "Longueur", "type": ""}, 
+    "Longueur - Gammes": {"sport": "Longueur", "type": "Gammes"},
+    
+    "Hauteur - Technique": {"sport": "Hauteur", "type": "Technique"},
+    "Hauteur - Élan réduit": {"sport": "Hauteur", "type": ""}, 
+    "Hauteur - Élan complet": {"sport": "Hauteur", "type": ""}, 
+    "Hauteur - Prise de marques": {"sport": "Hauteur", "type": ""}, 
+    "Hauteur - Courses d'élan": {"sport": "Hauteur", "type": ""}, 
+    "Hauteur - Gammes": {"sport": "Hauteur", "type": "Gammes"},
+    
+    "Perche - Technique": {"sport": "Perche", "type": "Technique"},
+    "Perche - Élan réduit": {"sport": "Perche", "type": ""},
+    "Perche - Élan complet": {"sport": "Perche", "type": ""},
+    "Perche - Prise de marques": {"sport": "Perche", "type": ""},
+    "Perche - Courses d'élan": {"sport": "Perche", "type": ""},
+    "Perche - Gammes": {"sport": "Perche", "type": "Gammes"},
+    
+    "Poids - Technique": {"sport": "Poids", "type": "Technique"},
+    "Poids - Élan réduit": {"sport": "Poids", "type": ""},
+    "Poids - Élan complet": {"sport": "Poids", "type": ""},
+    "Poids - Gammes": {"sport": "Poids", "type": "Gammes"},
+    
+    "Disque - Technique": {"sport": "Disque", "type": "Technique"},
+    "Disque - Élan réduit": {"sport": "Disque", "type": ""},
+    "Disque - Élan complet": {"sport": "Disque", "type": ""},
+    "Disque - Gammes": {"sport": "Disque", "type": "Gammes"},
+    
+    "Javelot - Technique": {"sport": "Javelot", "type": "Technique"},
+    "Javelot - Élan réduit": {"sport": "Javelot", "type": ""},
+    "Javelot - Élan complet": {"sport": "Javelot", "type": ""}, 
+    "Javelot - Gammes": {"sport": "Javelot", "type": "Gammes"},
+    
+    "Lancer - PPG": {"sport": "Muscu", "type": "PPG"},
+    "Muscu - Force": {"sport": "Muscu", "type": "Force"},
+    "Muscu - Puissance": {"sport": "Muscu", "type": "Puissance"},
+    "Muscu - Explosivité": {"sport": "Muscu", "type": "Explosivité"},
+    "PPG": {"sport": "Muscu", "type": "PPG"},
+    "Bondissements": {"sport": "Muscu", "type": "Bondissement"},
+    
+    "Compétition - Décathlon": {"sport": "Décathlon", "type": "Compétition"},
+    "Compétition - 100m": {"sport": "100m", "type": "Compétition"},
+    "Compétition - Longueur": {"sport": "Longueur", "type": "Compétition"},
+    "Compétition - Poids": {"sport": "Poids", "type": "Compétition"},
+    "Compétition - Hauteur": {"sport": "Hauteur", "type": "Compétition"},
+    "Compétition - 400m": {"sport": "400m", "type": "Compétition"},
+    "Compétition - 110mH": {"sport": "110mH", "type": "Compétition"},
+    "Compétition - Disque": {"sport": "Disque", "type": "Compétition"},
+    "Compétition - Perche": {"sport": "Perche", "type": "Compétition"},
+    "Compétition - Javelot": {"sport": "Javelot", "type": "Compétition"},
+    "Compétition - 1500m": {"sport": "1500m", "type": "Compétition"},
+    
+    
+    "Général": {"sport": "Mobilité", "type": ""},
+    "Spécifique - Épaules": {"sport": "Mobilité", "type": ""},
+    "Spécifique - Hanches": {"sport": "Mobilité", "type": ""},
+    "Spécifique - Dos": {"sport": "Mobilité", "type": ""},
+    "Spécifique - Jambes": {"sport": "Mobilité", "type": ""},
+    "Spécifique - Bas du corps": {"sport": "Mobilité", "type": ""},
+    "Spécifique - Haut du corps": {"sport": "Mobilité", "type": ""},
 }
 
 mode = 'day'
@@ -98,12 +117,19 @@ def dashboard_tab():
     st.title("Tableau de bord")
     st.divider()
     athlete = main_header()
+    if not athlete:
+        return
+    else:
+        user_id = athlete["id"]
     st.divider()
     
+    if not st.session_state.get('period'):
+        st.session_state.period = (date.today() - timedelta(days=7), date.today())
+    
     period = st.session_state.period
+    
     end_date = period[1]
     start_date = period[0]
-    user_id = athlete["id"]
 
     response = requests.get(f"{API_URL}/training_data", params={
         "user_id": user_id,
@@ -131,7 +157,20 @@ def dashboard_tab():
     with col2:
         training_load(training_data, period)
     with col3:
-        radar_graph(athlete)
+        choice = st.radio(
+        "Organiser par",
+            ["Sport", "Type d'entraînement"],
+            index=0,
+            horizontal=True,
+            key="double_button_toggle",
+            label_visibility="collapsed"
+        )
+
+        if choice == "Sport":
+            tri = 'sport'
+        else:
+            tri = 'type'
+        radar_graph(athlete, tri)
     
     col1, _, col2 = st.columns([20, 1, 20])
     with col1:
@@ -148,7 +187,7 @@ def get_athletes():
 def main_header():
     athletes = get_athletes()
     if not athletes:
-        st.info('Aucun athlète trouvé.')
+        st.warning("Aucun athlète trouvé. Veuillez d'abord créer un athlète.")
         return
     
     col1, _, col2 = st.columns([10, 1, 10])
@@ -383,7 +422,7 @@ def plot_training_load_gauge(load):
     return fig
 
 # ----- Graphe CS ----- #
-def radar_graph(athlete):
+def radar_graph(athlete, tri):
     period = st.session_state.period
     end_date = period[1]
     start_date = period[0]
@@ -411,7 +450,8 @@ def radar_graph(athlete):
     if df.empty:
         return []
 
-    df['event'] = df['type'].map(training_type_to_event_mapping)
+    #df['event'] = df['type'].map(training_type_to_event_mapping)
+    df['event'] = df['type'].map(lambda name: training_type_to_event_mapping.get(name, {}).get(tri, None))
     df = df.dropna(subset=['event'])
     counts = df['event'].value_counts().reset_index()
     counts.columns = ['name', 'value']

@@ -9,7 +9,8 @@ from helpers import *
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 API_URL = "http://127.0.0.1:8000"
 
-from backend.database import engine
+# from backend.database import engine
+from backend.database import engine_permanent, engine_season
 from backend.models.user import User
 from backend.models.enumeration import Role, Sport
 from backend.models.training import TrainingSession, UserTrainingLinks, CoachTrainingLinks
@@ -24,9 +25,14 @@ def training_tab():
 def display_trainings():
     st.subheader("Historique des entraînements")
 
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         # --- Select Athlete ---
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
+        
+        if not athletes:
+            st.warning("Aucun athlète trouvé. Veuillez d'abord créer un athlète.")
+            return
+        
         athlete_options = {f"{a.name}": a.id for a in athletes}
         selected_name = st.selectbox("Sélectionner un athlète", options= [""] + list(athlete_options.keys()))
         athlete_id = athlete_options.get(selected_name)
@@ -35,6 +41,7 @@ def display_trainings():
             st.info("Veuillez sélectionner un.e athlète pour afficher ses entraînements.")
             return
 
+    with Session(engine_season) as session:
         # --- Get all training sessions linked to this athlete ---
         link_query = select(UserTrainingLinks.training_id).where(UserTrainingLinks.user_id == athlete_id)
         training_ids = [r for r in session.exec(link_query).all()]
@@ -212,37 +219,40 @@ def add_training_session():
     session_types = {
         "Divers": ["Sport collectif", "Randonnée", "Sortie entre copains", "Sport de raquette"],
         "Volley-ball": ["Tactique", "Technique", "Match", "PPG", "Muscu", "Coordination"],
-        "Athlétisme": ["Sprint - Technique", "Sprint - Lactique", "Course - Aérobie", "Sprint - Départ", "Sprint - Haies", "Longueur - Technique", "Longueur - Élan réduit", "Longueur - Élan complet", "Longueur - Prise de marques", "Longueur - Courses d'élan", "Hauteur - Technique", "Hauteur - Élan réduit", "Hauteur - Élan complet", "Hauteur - Prise de marques", "Hauteur - Courses d'élan", "Perche - Technique", "Perche - Élan réduit", "Perche - Élan complet", "Perche - Prise de marques", "Perche - Courses d'élan", "Poids - Technique", "Poids - Élan réduit", "Poids - Élan complet", "Disque - Technique", "Disque - Élan réduit", "Disque - Élan complet", "Javelot - Technique", "Javelot - Élan réduit", "Javelot - Élan complet", "Lancer - PPG", "Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "PPG", "Bondissements", "Compétition - Décathlon", "Compétition - 100m", "Compétition - Longueur", "Compétition - Poids", "Compétition - Hauteur", "Compétition - 400m", "Compétition - 110mH", "Compétition - Disque", "Compétition - Perche", "Compétition - Javelot", "Compétition - 1500m"],
+        "Athlétisme": ["Sprint - Technique", "Sprint - Lactique", "Course - Aérobie Haute", "Course - Aérobie Basse", "Sprint - Départ", "Sprint - Haies", "Longueur - Technique", "Longueur - Élan réduit", "Longueur - Élan complet", "Longueur - Prise de marques", "Longueur - Courses d'élan", "Hauteur - Technique", "Hauteur - Élan réduit", "Hauteur - Élan complet", "Hauteur - Prise de marques", "Hauteur - Courses d'élan", "Perche - Technique", "Perche - Élan réduit", "Perche - Élan complet", "Perche - Prise de marques", "Perche - Courses d'élan", "Poids - Technique", "Poids - Élan réduit", "Poids - Élan complet", "Disque - Technique", "Disque - Élan réduit", "Disque - Élan complet", "Javelot - Technique", "Javelot - Élan réduit", "Javelot - Élan complet", "Lancer - PPG", "Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "PPG", "Bondissements", "Perche - Gammes", "Hauteur - Gammes", "Longueur - Gammes", "Javelot - Gammes", "Disque - Gammes", "Poids - Gammes", "Haies - Gammes", "Sprint - Gammes", "Compétition - Décathlon", "Compétition - 100m", "Compétition - Longueur", "Compétition - Poids", "Compétition - Hauteur", "Compétition - 400m", "Compétition - 110mH", "Compétition - Disque", "Compétition - Perche", "Compétition - Javelot", "Compétition - 1500m"],
         "Mobilité": ["Général", "Spécifique - Épaules", "Spécifique - Hanches", "Spécifique - Dos", "Spécifique - Jambes", "Spécifique - Bas du corps", "Spécifique - Haut du corps"],
     }
     
-    with Session(engine) as session:
-        # Sport entraîné
-        sport = st.selectbox("Sport", options=list(Sport), format_func=lambda x: x.value, index=0)
+    # Sport entraîné
+    sport = st.selectbox("Sport", options=list(Sport), format_func=lambda x: x.value, index=0)
         
+    with Session(engine_permanent) as session_perm:
         # Récup tous les athlètes
-        athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
-        athlete_options = {f"{a.name}": a.id for a in athletes}
-        selected_names = st.multiselect("Sélectionner des athlètes", options=list(athlete_options.keys()))
+        athletes = session_perm.exec(select(User).where(User.role == Role.Athlete)).all()
         
         # Récup tous les coachs
-        coaches = session.exec(select(User).where(User.role == Role.Coach)).all()
-        coach_mapping = {f"{c.name} ({c.sport.value})": c.id for c in coaches}
-        coach_display_options = ["Aucun"] + list(coach_mapping.keys())
-        selected_coach = st.selectbox("Désigner un coach", options=coach_display_options)
-    
-        # Autres attributs
-        session_type = st.selectbox("Type d'entraînement", options=session_types[sport])
-        training_date = st.date_input("Date", value=date.today())
+        coaches = session_perm.exec(select(User).where(User.role == Role.Coach)).all()
         
-        duration = st.number_input("Durée (minutes)", min_value=5, max_value=240, step=10)
-        intensity = st.slider("Intensité", 1, 10)
-        notes = st.text_area("Notes")
+    athlete_options = {f"{a.name}": a.id for a in athletes}
+    selected_names = st.multiselect("Sélectionner des athlètes", options=list(athlete_options.keys()))
+    coach_mapping = {f"{c.name} ({c.sport.value})": c.id for c in coaches}
+    coach_display_options = ["Aucun"] + list(coach_mapping.keys())
+    selected_coach = st.selectbox("Désigner un coach", options=coach_display_options)
+    
+    # Autres attributs
+    session_type = st.selectbox("Type d'entraînement", options=session_types[sport])
+    training_date = st.date_input("Date", value=date.today())
+        
+    duration = st.number_input("Durée (minutes)", min_value=5, max_value=240, step=10)
+    intensity = st.slider("Intensité", 1, 10)
+    notes = st.text_area("Notes")
 
-
-        if st.button("Créer un entraînement"):
-            if not selected_names:
-                st.warning("Veuillez sélectionner au moins un atlhète.")
+    if st.button("Créer un entraînement"):
+        if not selected_names:
+            st.warning("Veuillez sélectionner au moins un atlhète.")
+            return
+            
+        with Session(engine_season) as session_season:
             if not sport:
                 st.warning("Veuillez sélectionner un sport.")
 
@@ -257,8 +267,8 @@ def add_training_session():
                     notes=notes,
                     coach_id = None if selected_coach == "Aucun" else coach_mapping[selected_coach]
                 )
-                session.add(new_session)
-                session.flush()
+                session_season.add(new_session)
+                session_season.flush()
 
                 # Link selected athletes
                 for name in selected_names:
@@ -267,7 +277,7 @@ def add_training_session():
                         user_id=athlete_id,
                         training_id=new_session.id,
                     )
-                    session.add(link)
+                    session_season.add(link)
                 
                 # Link selected coaches
                 if selected_coach != "Aucun":
@@ -276,9 +286,9 @@ def add_training_session():
                         coach_id=coach_id,
                         training_id=new_session.id,
                     )
-                    session.add(link)
+                    session_season.add(link)
 
-                session.commit()
+                session_season.commit()
                 st.success(f"Entraînement créé et lié à {len(selected_names)} athlète(s).")
 
 def edit_training_session():

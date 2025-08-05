@@ -45,14 +45,10 @@ def compute_hungarian_score(event, sex, perf):
     if (event not in men_ec) and (event not in women_ec):
         return 0
     
-    
     if sex == 'M':
         coefs = men_ec[event]
     elif sex == 'F':
         coefs = women_ec[event]
-    else:
-        # Si le sexe est "Autre", on ne sait pas quelles équations utiliser.
-        return 0
 
     if event in throws:
         perf /= 100
@@ -72,7 +68,7 @@ def compute_hungarian_score(event, sex, perf):
         
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":#
     parser = argparse.ArgumentParser()
 
     # Ajouter les arguments

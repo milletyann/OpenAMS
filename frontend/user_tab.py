@@ -29,7 +29,7 @@ def add_user():
         age = st.number_input("Age", min_value=0, max_value=100)
         sexe = st.selectbox(
             "Sexe",
-            ("M", "F", "Autre")
+            ("M", "F")
         )
         submitted = st.form_submit_button("Enregistrer")
 
@@ -91,8 +91,8 @@ def update_user(user):
         new_age = st.number_input("Âge", min_value=0, max_value=100, value=user["age"], key=f"age_{user['id']}")
         new_sexe = st.selectbox(
             "Sexe",
-            ("M", "F", "Autre"),
-            index=("M", "F", "Autre").index(user["sexe"]),
+            ("M", "F"),
+            index=("M", "F").index(user["sexe"]),
             key=f"sexe_{user['id']}",
         )
         update_btn = st.form_submit_button("Mettre à jour")

@@ -6,7 +6,8 @@ from datetime import date, datetime, timedelta, time
 from backend.models.enumeration import Role
 from backend.models.user import User
 from backend.models.injury_ticket import InjuryType, BodyArea
-from backend.database import engine
+#from backend.database import engine
+from backend.database import engine_permanent, engine_season
 
 import locale
 locale.setlocale(locale.LC_TIME, 'fr_FR.UTF-8')
@@ -51,10 +52,10 @@ def display_health_check():
     athletes = fetch_athletes()
 
     if not athletes:
-        st.info("Aucun athlète trouvé.")
+        st.warning("Aucun athlète trouvé. Veuillez d'abord créer un athlète.")
         return
 
-    athlete_options = {athlete["name"]: athlete["id"] for athlete in athletes}
+    athlete_options = {a["name"]: a["id"] for a in athletes}
 
     athlete_name = st.selectbox(
         "Sélectionnez un athlète",
@@ -89,7 +90,7 @@ def display_health_check():
             df = df[[col for col in desired_columns if col in df.columns]]
             
             if df.empty:
-                st.info("No health checks recorded yet for this athlete.")
+                st.info("Aucun bilan quotidien enregistré pour cet.te athlète.")
             else:
                 # Convert date to datetime
                 df["date"] = pd.to_datetime(df["date"])
@@ -235,7 +236,7 @@ def add_daily_health_check():
 # Physical issue + Followup
 def create_physical_issue():
     st.subheader("Créer un ticket de blessure")
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
     athlete_map = {a.name: a.id for a in athletes}
     
@@ -266,7 +267,7 @@ def create_physical_issue():
 
 def add_followup():
     st.subheader("Ajouter un suivi de blessure")
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
     athlete_map = {a.name: a.id for a in athletes}
     
@@ -341,9 +342,11 @@ def add_followup():
 
 def display_issues():
     st.subheader("Suivi des blessures")
-    with Session(engine) as session:
-        athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
-    athlete_map = {a.name: a.id for a in athletes}
+    
+    athletes = fetch_athletes()
+    if not athletes:
+        st.warning("Aucun athlète trouvé. Veuillez d'abord créer un athlète.")
+    athlete_map = {a["name"]: a["id"] for a in athletes}
     
     athlete_name = st.selectbox("Athlète", options=[""] + list(athlete_map.keys()), key="disp_ai")
     if not athlete_name:

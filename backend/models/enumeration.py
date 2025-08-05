@@ -13,4 +13,3 @@ class Role(Enum):
 class Sexe(Enum):
     M = "M"
     F = "F"
-    NP = "Autre"

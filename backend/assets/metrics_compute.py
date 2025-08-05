@@ -102,6 +102,9 @@ def recovery_score(measurements):
             score, weight = normalize_metric(value, metric)
             weight_sum += weight
             normalized_scores.append(score)
+            
+    if weight_sum == 0:
+        return 0.0
     
     combined_score = np.sum(normalized_scores)/weight_sum
     return round(combined_score * 10, 2)

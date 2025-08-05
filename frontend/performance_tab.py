@@ -5,7 +5,8 @@ from datetime import date, datetime
 from backend.models.enumeration import Role
 from backend.models.user import User
 from backend.models.performance import Performance
-from backend.database import engine
+# from backend.database import engine
+from backend.database import engine_permanent, engine_season
 from helpers import *
 
 
@@ -47,9 +48,14 @@ def performance_tab():
     
 def display_performances():    
     st.subheader("Historique des performances")
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         # --- Athlete selector --- 
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
+        
+        if not athletes:
+            st.warning("Aucun athlète trouvé. Veuillez d'abord créer un athlète.")
+            return
+    
         athlete_options = {f"{a.name}": a.id for a in athletes}
         selected_athlete_label = st.selectbox("Sélectionnez un·e athlète", [""] + list(athlete_options.keys()), key="athlete_selectbox")
         selected_athlete_id = athlete_options.get(selected_athlete_label)
@@ -310,7 +316,7 @@ def add_performance():
     # Enregistrer nouvelles performances
     st.subheader("Ajouter une performance")
     
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
 
     selected_sport = st.selectbox("Sport", list(sport_disciplines.keys()), key="sport_selector")
@@ -330,7 +336,11 @@ def add_performance():
         submitted = st.form_submit_button("Enregistrer")
         if submitted:
             # GET THE SEX OF THE ATHLETE HERE (I GUESS?)
+            if not selected_athlete:
+                st.warning("Veuillez sélectionner au moins un atlhète.")
+                return
             sex = selected_athlete.sexe.value
+            
             if selected_discipline in ["Décathlon", "Heptathlon"]:
                 score = perf_mark
             # COMPUTE THE SCORE HERE (WE HAVE THE DISCIPLINE, THE SEX AND THE PERFORMANCE)

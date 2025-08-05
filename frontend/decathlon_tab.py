@@ -1,7 +1,8 @@
 import streamlit as st
 from sqlmodel import Session, select
 
-from backend.database import engine
+#from backend.database import engine
+from backend.database import engine_permanent, engine_season
 import requests
 from datetime import date
 from backend.models.user import User
@@ -39,10 +40,9 @@ unit_mapping = {
     "1500m": "min",
 }
 
-
 def decathlon_tab():
     st.header("Ma Compétition")
-    st.markdown("---")
+    st.divider()
     
     if "decathlon_view" not in st.session_state:
         st.session_state.decathlon_view = None
@@ -103,14 +103,6 @@ def fetch_athletes_in_deca(decathlon_id: int):
     return []
 
 @st.cache_data
-def fetch_all_decathlons_cached():
-    return fetch_all_decathlons()
-
-@st.cache_data
-def fetch_performances_cached(comp_id):
-    return fetch_performances(comp_id)
-
-@st.cache_data
 def fetch_user_cached(uid):
     return fetch_user(uid)
 
@@ -159,9 +151,14 @@ def display_live_ranking(df_rank):
     st.plotly_chart(fig, use_container_width=True)
 
 def display_competition():
-    competitions = fetch_all_decathlons_cached()
+    competitions = fetch_all_decathlons()
     if not competitions:
         st.warning("Aucune compétition trouvée.")
+        if st.button("Retour"):
+            st.session_state.decathlon_view = None
+            st.session_state.active_athletes = []
+            st.session_state.competition_data = {}
+            st.rerun()
         return
         
     comp_options = {comp["name"]: comp for comp in competitions}
@@ -180,7 +177,7 @@ def display_competition():
     selected_comp = comp_options[selected_name]
     st.session_state["selected_competition"] = selected_comp
 
-    performances = fetch_performances_cached(selected_comp["id"])
+    performances = fetch_performances(selected_comp["id"])
     if not performances:
         st.info("Aucune performance enregistrée pour cette compétition.")
         return
@@ -334,7 +331,7 @@ def display_competition():
     html += "</table>"
     st.markdown(html, unsafe_allow_html=True)
         
-    st.markdown("---")
+    st.divider()
 
     if st.button("Retour"):
         st.session_state.decathlon_view = None
@@ -343,9 +340,15 @@ def display_competition():
 # ----------------- Resume/Modify section -----------------
 def resume_competition():
     st.subheader("Reprendre une compétition en cours")
-    competitions = fetch_all_decathlons_cached()
+    #competitions = fetch_all_decathlons_cached()
+    competitions = fetch_all_decathlons()
     if not competitions:
         st.warning("Aucune compétition trouvée.")
+        if st.button("Retour"):
+            st.session_state.decathlon_view = None
+            st.session_state.active_athletes = []
+            st.session_state.competition_data = {}
+            st.rerun()
         return
 
     comp_options = {comp["name"]: comp for comp in competitions}
@@ -354,12 +357,12 @@ def resume_competition():
     
     st.session_state["decathlon_object"] = selected_comp
     
-    performances = fetch_performances_cached(selected_comp["id"])
+    performances = fetch_performances(selected_comp["id"])
     competition_data = {}
     if not performances:
         ids = fetch_athletes_in_deca(selected_comp["id"])
         active_athletes = []
-        with Session(engine) as session:
+        with Session(engine_permanent) as session:
             for id in ids:
                 athlete = session.exec(select(User).where(User.id == id['user_id'])).all()
                 active_athletes.append(athlete[0])
@@ -378,7 +381,7 @@ def resume_competition():
             competition_data[id][event] = p
         
         active_athletes = []
-        with Session(engine) as session:
+        with Session(engine_permanent) as session:
             for id in ids:
                 athlete = session.exec(select(User).where(User.id == id)).all()
                 
@@ -394,7 +397,7 @@ def resume_competition():
         st.rerun()
 
 def update_decathlon_in_db():
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         comp = st.session_state.get("decathlon_object")
         if not comp:
             st.error("Aucune compétition sélectionnée.")
@@ -413,8 +416,6 @@ def update_decathlon_in_db():
                 events = decaHM if age < 16 else decaH
             elif sexe == "F":
                 events = decaF
-            else:
-                continue
 
             perf_data = st.session_state["competition_data"].get(user_id, {})
 
@@ -492,7 +493,7 @@ def update_decathlon_in_db():
 # ------------------ Competition Creation ------------------
 def create_competition():
     st.subheader("Créer une nouvelle compétition")
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         athletes = session.exec(select(User).where(User.role == Role.Athlete)).all()
 
     athlete_options = {f"{a.name}": a for a in athletes}
@@ -606,11 +607,11 @@ def compute_score_remote(event: str, sex: str, perf: float) -> int:
     }
     try:
         score_response = requests.post(
-            f"{API_URL}/compute_hungarian_score/",
+            f"{API_URL}/compute_hungarian_score",
             json=score_payload
         )
         if score_response.status_code == 200:
-            return score_response.json().get("score", 0)
+            return score_response.json().get("score", 146)
         else:
             st.error(f"Erreur calcul du score : {score_response.status_code} - {score_response.text}")
             return 0
@@ -620,7 +621,7 @@ def compute_score_remote(event: str, sex: str, perf: float) -> int:
 
 # ------------------ Save to Database ------------------
 def create_competition_in_db():
-    with Session(engine) as session:
+    with Session(engine_permanent) as session:
         
         # 1. Create the competition
         comp = Decathlon(
@@ -710,8 +711,6 @@ def compute_ranking(athlete_map, selected_sexes):
             events = decaHM if age < 16 else decaH
         elif sexe == "F":
             events = decaF
-        else:
-            continue
 
         cumulative_score = 0
         for event in events:
