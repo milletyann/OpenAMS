@@ -26,12 +26,6 @@ Go in the main folder of the project and run:
 uvicorn backend.main:app --reload
 ```
 
-Or go in the `backend` folder and run:
-
-```bash
-uvicorn main:app --reload
-```
-
 It will run on `http://127.0.0.1:8000`
 
 ### Frontend (Streamlit)
@@ -42,12 +36,6 @@ Go in the main folder of the project and run:
 
 ```bash
 streamlit run frontend/app.py
-```
-
-Or go in the `frontend` folder of the project and run:
-
-```bash
-streamlit run app.py
 ```
 
 ---
@@ -168,7 +156,6 @@ Future improvements:
 
 - customizable graphs and plots in dashboard display to better explore data (instead of last 7 days display)
 - view pain/injuries evolution with plots and graphs, sort them
-
 
 ## Tech Stack
 
