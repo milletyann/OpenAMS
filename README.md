@@ -16,11 +16,9 @@ conda activate openams
 
 ## Running the app
 
+From the root folder of the project, run the following commands:
+
 ### Backend (FastAPI + SQLModel)
-
-The database (SQLite) and API logic.
-
-Go in the main folder of the project and run:
 
 ```bash
 uvicorn backend.main:app --reload
@@ -29,10 +27,6 @@ uvicorn backend.main:app --reload
 It will run on `http://127.0.0.1:8000`
 
 ### Frontend (Streamlit)
-
-The user interface.
-
-Go in the main folder of the project and run:
 
 ```bash
 streamlit run frontend/app.py
@@ -44,13 +38,13 @@ streamlit run frontend/app.py
 
 Here is an overview of the current features.
 
-### User Page
+### User
 
 Everything related to user (athlete or coach) entities:
 
 - Create new users (athlete or coach role)
 - Assign one sport to each user
-- Edit existing user information (there are still some bugs here, precisely in the gender modification that are not taken into account)
+- Edit existing user information (there are still some bugs here, precisely in the gender and role modifications that are not taken into account)
 - Delete users
 
 ---
@@ -63,7 +57,38 @@ Everything related to user (athlete or coach) entities:
 
 ---
 
-### Training Management Page
+### Dashboard (in creation)
+
+Summarize under the form of graphs (plots, radars, donuts, 3D models) all the information of the other tabs.
+Select one athlete and a period of time greater or equal to 7 days (default is 7 days going until today).
+
+Donut charts:
+
+- Mean intensity of trainings session over the period (can be calculated session-wise or day-wise, fixed to day-wise for now)
+- Mean duration of trainings session over the period
+- Daily recovery score (calculated with the data of the last day of the period)
+- Physical and Physiological scores of health (not created yet)
+
+Radar chart:
+
+- summarize all trainings of the period, grouped by type or by event (e.g. technical/physical/mental or sprint/hurdles/highjump)
+
+Gauge chart:
+
+- Global training load over the period (value/10)
+
+Graph plots (not created yet):
+
+- Temporal metrics of health (mood, sleep quality, sleep duration, muscle soreness): can superpose curves.
+- Injury tracking: display curves of pain intensity, capacity restriction for injuries. Can either display one metrics for all injuries, or all metrics for one injury.
+
+3D model plot (not created yet):
+
+- 3D Human body with red dots to locate actual issues. Tooltip to display more about the injury/pain: days since apparition, intensity, restriction.
+
+---
+
+### Training Management
 
 Keep track of all training sessions, linked to one or more athletes.
 
