@@ -2,9 +2,9 @@ import streamlit as st
 from sqlmodel import Session, select
 import requests
 from datetime import date, datetime
-from backend.models.enumeration import Role
+from backend.models.enumeration import Role, AthlePerf, AthlePerfNonMarked, MobilitePerf, VolleyPerf, MuscuPerf
 from backend.models.user import User
-from backend.models.performance import Performance
+from backend.models.performance import Performance, ConditionMeteo
 # from backend.database import engine
 from backend.database import engine_permanent, engine_season
 from helpers import *
@@ -14,27 +14,28 @@ API_URL = "http://localhost:8000"
 
 # --- Mapping ---
 sport_disciplines = {
-    "Athlétisme": ["Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "Décathlon", "100m", "Longueur", "Poids", "Hauteur", "400m", "110mH", "100mH", "Disque", "Perche", "Javelot", "1500m", "Heptathlon", "60m", "60mH", "1000m", "200m", "400mH", "800m", "3000m", "3000m Steeple", "5000m", "10k", "Semi-marathon", "Marathon", "Marteau", "Triple-Saut"],
-    "Volley-ball": ["Attaque", "Digs", "Recep", "Service - Ace", "Service - réussis", "Contre"],
-    "Mobilité": ["GE Facial", "GE Frontal Gauche", "GE Frontal Droit", "Hand-to-toes"]
+    "Athlétisme": [a.value for a in AthlePerf] + [e.value for e in AthlePerfNonMarked],
+    "Prépa Physique": [b.value for b in MuscuPerf],
+    "Mobilité": [c.value for c in MobilitePerf],
+    "Volley-ball": [d.value for d in VolleyPerf],
 }
 
 # --- Athlétisme --- #
-muscu = ['Muscu - Force', 'Muscu - Puissance', 'Muscu - Explosivité']
+muscu = [b.value for b in MuscuPerf]
 throws = ['Disque', 'Javelot', 'Poids']
 jumps = ['Longueur', 'Hauteur', 'Perche']
 races = ['60m', '60mH', '100m', '100mH', '110mH', '200m', '400m', '800m', '1000m', '1500m']
 events_athle = throws + jumps + races
 
 # --- Lists for performance sorting --- #
-disciplines_to_min = races + sport_disciplines['Volley-ball']
+disciplines_to_min = races + [a.value for a in AthlePerfNonMarked] + sport_disciplines['Volley-ball'] 
 disciplines_to_max = jumps + throws + ["Décathlon", "Heptathlon"] + sport_disciplines['Mobilité'] + muscu
 
 # --- Units --- #
 unites = ["centimètres", "secondes", "points", "kg"]
 
 # --- Weather --- #
-meteo_mapping = ["Canicule", "Soleil", "Nuageux", "Venteux", "Pluvieux", "Orageux", "Intérieur"]
+meteo_mapping = [a.value for a in ConditionMeteo]
 
 def performance_tab():
     st.title("Performance")
@@ -98,7 +99,7 @@ def display_performances():
             sort_by = "Plus Récent"
             sort_by = st.selectbox(
                 "Trier",
-                ["Plus Récent", "Plus Ancien", "Meilleur Score", "Pire Score"],
+                ["Plus Récent", "Plus Ancien", "Meilleure Performance", "Pire Performance"],
                 key="sort_selectbox"
             )
             
@@ -142,10 +143,18 @@ def display_performances():
             all_perfs.sort(key=lambda p: p.date or datetime.min, reverse=True)
         elif sort_by == "Plus Ancien":
             all_perfs.sort(key=lambda p: p.date or datetime.min)
-        elif sort_by == "Meilleur Score":
-            all_perfs.sort(key=lambda p: p.score or 0, reverse=True)
-        elif sort_by == "Pire Score":
-            all_perfs.sort(key=lambda p: p.score or 0)
+        elif sort_by == "Meilleure Performance":
+            all_perfs.sort(
+                key=lambda p: (
+                    -(p.performance or 0) if p.discipline in disciplines_to_max else (float(p.performance) or float("inf"))
+                )
+            )
+        elif sort_by == "Pire Performance":
+            all_perfs.sort(
+                key=lambda p: (
+                    (p.performance or 0) if p.discipline in disciplines_to_max else -(float(p.performance) or 0)
+                )
+            )
         
         # --- Pagination ---
         performances_per_page = 6

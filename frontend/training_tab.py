@@ -9,10 +9,9 @@ from helpers import *
 sys.path.append(str(pathlib.Path(__file__).parent.parent))
 API_URL = "http://127.0.0.1:8000"
 
-# from backend.database import engine
 from backend.database import engine_permanent, engine_season
 from backend.models.user import User
-from backend.models.enumeration import Role, Sport
+from backend.models.enumeration import Role, Sport, AthleTrainings, VolleyTrainings, DiversTrainings, MobiliteTrainings
 from backend.models.training import TrainingSession, UserTrainingLinks, CoachTrainingLinks
 from datetime import date, timedelta
 
@@ -217,10 +216,10 @@ def add_training_session():
 
     # Types de séances selon le sport choisi
     session_types = {
-        "Divers": ["Sport collectif", "Randonnée", "Sortie entre copains", "Sport de raquette"],
-        "Volley-ball": ["Tactique", "Technique", "Match", "PPG", "Muscu", "Coordination"],
-        "Athlétisme": ["Sprint - Technique", "Sprint - Lactique", "Course - Aérobie Haute", "Course - Aérobie Basse", "Sprint - Départ", "Sprint - Haies", "Longueur - Technique", "Longueur - Élan réduit", "Longueur - Élan complet", "Longueur - Prise de marques", "Longueur - Courses d'élan", "Hauteur - Technique", "Hauteur - Élan réduit", "Hauteur - Élan complet", "Hauteur - Prise de marques", "Hauteur - Courses d'élan", "Perche - Technique", "Perche - Élan réduit", "Perche - Élan complet", "Perche - Prise de marques", "Perche - Courses d'élan", "Poids - Technique", "Poids - Élan réduit", "Poids - Élan complet", "Disque - Technique", "Disque - Élan réduit", "Disque - Élan complet", "Javelot - Technique", "Javelot - Élan réduit", "Javelot - Élan complet", "Lancer - PPG", "Muscu - Force", "Muscu - Puissance", "Muscu - Explosivité", "PPG", "Bondissements", "Perche - Gammes", "Hauteur - Gammes", "Longueur - Gammes", "Javelot - Gammes", "Disque - Gammes", "Poids - Gammes", "Haies - Gammes", "Sprint - Gammes", "Compétition - Décathlon", "Compétition - 100m", "Compétition - Longueur", "Compétition - Poids", "Compétition - Hauteur", "Compétition - 400m", "Compétition - 110mH", "Compétition - Disque", "Compétition - Perche", "Compétition - Javelot", "Compétition - 1500m"],
-        "Mobilité": ["Général", "Spécifique - Épaules", "Spécifique - Hanches", "Spécifique - Dos", "Spécifique - Jambes", "Spécifique - Bas du corps", "Spécifique - Haut du corps"],
+        "Athlétisme": [a.value for a in AthleTrainings],
+        "Mobilité": [b.value for b in MobiliteTrainings],
+        "Divers": [c.value for c in DiversTrainings],
+        "Volley-ball": [d.value for d in VolleyTrainings],
     }
     
     # Sport entraîné

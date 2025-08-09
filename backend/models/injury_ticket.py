@@ -5,6 +5,8 @@ from enum import Enum
 
 
 class InjuryType(str, Enum):
+    Faiblesse = "Faiblesse Musculaire"
+    Raideur = "Raideur Musculaire"
     Entorse = "Entorse"
     Elongation = "Élongation"
     Dechirure = "Déchirure"

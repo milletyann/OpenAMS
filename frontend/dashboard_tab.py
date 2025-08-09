@@ -12,50 +12,46 @@ import numpy as np
 API_URL = "http://localhost:8000"
 
 training_type_to_event_mapping = {
-    "Sprint - Technique": {"sport": "Sprint", "type": "Technique"},
+    "Sprint - Départ": {"sport": "Sprint", "type": "Technique"}, 
     "Sprint - Lactique": {"sport": "", "type": "Lactique"}, 
-    "Sprint - Départ": {"sport": "Sprint", "type": "Départ"}, 
+    "Sprint - Technique": {"sport": "Sprint", "type": "Technique"},
     "Sprint - Gammes": {"sport": "Sprint", "type": "Gammes"},
-    "Sprint - Haies": {"sport": "Haies", "type": "Technique"}, 
+    
+    "Haies - Technique": {"sport": "Haies", "type": "Technique"}, 
+    "Haies - Passages": {"sport": "Haies", "type": "Recherche repères"},
     "Haies - Gammes": {"sport": "Haies", "type": "Gammes"},
     
     "Course - Aérobie Haute": {"sport": "Aérobie", "type": "Intervalles"}, 
     "Course - Aérobie Basse": {"sport": "Aérobie", "type": "EF"}, 
     
     "Longueur - Technique": {"sport": "Longueur", "type": "Technique"},
-    "Longueur - Élan réduit": {"sport": "Longueur", "type": ""}, 
-    "Longueur - Élan complet": {"sport": "Longueur", "type": ""}, 
-    "Longueur - Prise de marques": {"sport": "Longueur", "type": ""}, 
-    "Longueur - Courses d'élan": {"sport": "Longueur", "type": ""}, 
+    "Longueur - Élan réduit": {"sport": "Longueur", "type": "Technique"}, 
+    "Longueur - Élan complet": {"sport": "Longueur", "type": "Recherche repères"}, 
     "Longueur - Gammes": {"sport": "Longueur", "type": "Gammes"},
     
     "Hauteur - Technique": {"sport": "Hauteur", "type": "Technique"},
-    "Hauteur - Élan réduit": {"sport": "Hauteur", "type": ""}, 
-    "Hauteur - Élan complet": {"sport": "Hauteur", "type": ""}, 
-    "Hauteur - Prise de marques": {"sport": "Hauteur", "type": ""}, 
-    "Hauteur - Courses d'élan": {"sport": "Hauteur", "type": ""}, 
+    "Hauteur - Élan réduit": {"sport": "Hauteur", "type": "Technique"}, 
+    "Hauteur - Élan complet": {"sport": "Hauteur", "type": "Recherche repères"}, 
     "Hauteur - Gammes": {"sport": "Hauteur", "type": "Gammes"},
     
     "Perche - Technique": {"sport": "Perche", "type": "Technique"},
-    "Perche - Élan réduit": {"sport": "Perche", "type": ""},
-    "Perche - Élan complet": {"sport": "Perche", "type": ""},
-    "Perche - Prise de marques": {"sport": "Perche", "type": ""},
-    "Perche - Courses d'élan": {"sport": "Perche", "type": ""},
+    "Perche - Élan réduit": {"sport": "Perche", "type": "Technique"},
+    "Perche - Élan complet": {"sport": "Perche", "type": "Recherche repères"},
     "Perche - Gammes": {"sport": "Perche", "type": "Gammes"},
     
     "Poids - Technique": {"sport": "Poids", "type": "Technique"},
-    "Poids - Élan réduit": {"sport": "Poids", "type": ""},
-    "Poids - Élan complet": {"sport": "Poids", "type": ""},
+    "Poids - Élan réduit": {"sport": "Poids", "type": "Technique"},
+    "Poids - Élan complet": {"sport": "Poids", "type": "Recherche repères"},
     "Poids - Gammes": {"sport": "Poids", "type": "Gammes"},
     
     "Disque - Technique": {"sport": "Disque", "type": "Technique"},
-    "Disque - Élan réduit": {"sport": "Disque", "type": ""},
-    "Disque - Élan complet": {"sport": "Disque", "type": ""},
+    "Disque - Élan réduit": {"sport": "Disque", "type": "Technique"},
+    "Disque - Élan complet": {"sport": "Disque", "type": "Recherche repères"},
     "Disque - Gammes": {"sport": "Disque", "type": "Gammes"},
     
     "Javelot - Technique": {"sport": "Javelot", "type": "Technique"},
-    "Javelot - Élan réduit": {"sport": "Javelot", "type": ""},
-    "Javelot - Élan complet": {"sport": "Javelot", "type": ""}, 
+    "Javelot - Élan réduit": {"sport": "Javelot", "type": "Technique"},
+    "Javelot - Élan complet": {"sport": "Javelot", "type": "Recherche repères"}, 
     "Javelot - Gammes": {"sport": "Javelot", "type": "Gammes"},
     
     "Lancer - PPG": {"sport": "Muscu", "type": "PPG"},
@@ -77,14 +73,15 @@ training_type_to_event_mapping = {
     "Compétition - Javelot": {"sport": "Javelot", "type": "Compétition"},
     "Compétition - 1500m": {"sport": "1500m", "type": "Compétition"},
     
+    "Général": {"sport": "Mobilité", "type": "Mobilité"},
+    "Spécifique - Épaules": {"sport": "Mobilité", "type": "Mobilité"},
+    "Spécifique - Hanches": {"sport": "Mobilité", "type": "Mobilité"},
+    "Spécifique - Dos": {"sport": "Mobilité", "type": "Mobilité"},
+    "Spécifique - Jambes": {"sport": "Mobilité", "type": "Mobilité"},
+    "Spécifique - Bas du corps": {"sport": "Mobilité", "type": "Mobilité"},
+    "Spécifique - Haut du corps": {"sport": "Mobilité", "type": "Mobilité"},
     
-    "Général": {"sport": "Mobilité", "type": ""},
-    "Spécifique - Épaules": {"sport": "Mobilité", "type": ""},
-    "Spécifique - Hanches": {"sport": "Mobilité", "type": ""},
-    "Spécifique - Dos": {"sport": "Mobilité", "type": ""},
-    "Spécifique - Jambes": {"sport": "Mobilité", "type": ""},
-    "Spécifique - Bas du corps": {"sport": "Mobilité", "type": ""},
-    "Spécifique - Haut du corps": {"sport": "Mobilité", "type": ""},
+    "Prévention Blessure": {"sport": "Muscu", "type": "Prévention/Réhab"},
 }
 
 mode = 'day'

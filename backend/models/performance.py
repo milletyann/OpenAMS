@@ -9,13 +9,13 @@ if TYPE_CHECKING:
     from .user import User
 
 class ConditionMeteo(str, Enum):
-    canicule = "Canicule"
     soleil = "Soleil"
     nuageux = "Nuageux"
+    interieur = "Intérieur"
+    canicule = "Canicule"
     venteux = "Venteux"
     pluvieux = "Pluvieux"
     orageux = "Orageux"
-    interieur = "Intérieur"
 
 class Performance(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

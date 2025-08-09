@@ -611,7 +611,7 @@ def compute_score_remote(event: str, sex: str, perf: float) -> int:
             json=score_payload
         )
         if score_response.status_code == 200:
-            return score_response.json().get("score", 146)
+            return score_response.json().get("score", 0)
         else:
             st.error(f"Erreur calcul du score : {score_response.status_code} - {score_response.text}")
             return 0
