@@ -79,15 +79,30 @@ def display_health_check():
                 "energy_level",
                 "stress_level",
                 "mood",
-                "resting_heart_rate",
-                "hand_grip_test",
                 "longest_expiration_test",
                 "single_leg_proprio_test",
+                "resting_heart_rate",
+                "hand_grip_test",
                 "notes",
             ]
             
             # Filter out missing columns (in case backend changes)
             df = df[[col for col in desired_columns if col in df.columns]]
+            df = df.rename(columns={
+                'date': 'date', 
+                'muscle_soreness': 'Fatigue Msc', 
+                "sleep_quality": "Qualité Som", 
+                "sleep_duration": "Durée Som", 
+                "wakeup_time": "Lever", 
+                "energy_level": "Énergie",
+                "stress_level": "Stress",
+                "mood": "Humeur",
+                "longest_expiration_test": "LET",
+                "single_leg_proprio_test": "SLPT",
+                "resting_heart_rate": "RHR",
+                "hand_grip_test": "HGT",
+                "notes": "Remarques",
+            })
             
             if df.empty:
                 st.info("Aucun bilan quotidien enregistré pour cet.te athlète.")
@@ -368,11 +383,11 @@ def display_issues():
     
     
     st.markdown(f"""
-    **Nom:** {ticket['title']}  
-    **Date d'apparition:** {ticket['date_opened']}  
-    **Zone:** {ticket['area_concerned']}  
-    **Type:** {ticket['injury_type']}  
-    **Informations générales:** {ticket.get('notes', '—')}
+        **Nom:** {ticket['title']}  
+        **Date d'apparition:** {ticket['date_opened']}  
+        **Zone:** {ticket['area_concerned']}  
+        **Type:** {ticket['injury_type']}  
+        **Informations générales:** {ticket.get('notes', '—')}
     """)
     
     followups = requests.get(f"{API_URL}/issues/{ticket_id}/followups/").json()
@@ -380,13 +395,15 @@ def display_issues():
         st.info("Aucun suivi enregistré.")
         return
     
+    followups_sorted = sorted(followups, key=lambda x: x["date"], reverse=True)
+    
     # Header row
     cols = st.columns([1, 1, 1, 3, 3])
     for c, h in zip(cols, ["Date", "Douleur", "Capacité", "Notes", "Traitements"]):
         c.markdown(f"**{h}**")
     st.markdown("---")
     
-    for f in followups:
+    for f in followups_sorted:
         cols = st.columns([1, 1, 1, 3, 3])
         cols[0].write(f["date"])
         cols[1].write(f["pain_intensity"])
