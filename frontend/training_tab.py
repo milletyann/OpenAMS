@@ -11,7 +11,7 @@ API_URL = "http://127.0.0.1:8000"
 
 from backend.database import engine_permanent, engine_season
 from backend.models.user import User
-from backend.models.enumeration import Role, Sport, AthleTrainings, VolleyTrainings, DiversTrainings, MobiliteTrainings
+from backend.models.enumeration import Role, Sport, AthleTrainings, MuscuTrainings, VolleyTrainings, DiversTrainings, MobiliteTrainings
 from backend.models.training import TrainingSession, UserTrainingLinks, CoachTrainingLinks
 from datetime import date, timedelta
 
@@ -218,12 +218,14 @@ def add_training_session():
     session_types = {
         "Athlétisme": [a.value for a in AthleTrainings],
         "Mobilité": [b.value for b in MobiliteTrainings],
+        "Prépa Physique": [c.value for c in MuscuTrainings],
         "Divers": [c.value for c in DiversTrainings],
         "Volley-ball": [d.value for d in VolleyTrainings],
     }
     
     # Sport entraîné
-    sport = st.selectbox("Sport", options=list(Sport), format_func=lambda x: x.value, index=0)
+    #sport = st.selectbox("Sport", options=list(Sport), format_func=lambda x: x.value, index=0)
+    sport = st.selectbox("Sport", options=session_types.keys())
         
     with Session(engine_permanent) as session_perm:
         # Récup tous les athlètes

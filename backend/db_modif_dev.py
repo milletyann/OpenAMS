@@ -1,8 +1,8 @@
 from sqlalchemy import text
 from sqlmodel import SQLModel, Session, create_engine, select
 
-#engine = create_engine("sqlite:///data/database.db")
-engine = create_engine("sqlite:///data/season2526.db")
+engine = create_engine("sqlite:///data/database.db")
+#engine = create_engine("sqlite:///data/season2526.db")
 
 # with Session(engine) as session:
 #     result = session.execute(text("PRAGMA table_info(decathlonperformance);"))
@@ -26,11 +26,11 @@ with Session(engine) as session:
     #     print(f"Erreur lors de l'ajout de la colonne single_leg_proprio_test: {e}")
         
     # MODIFIER TOUTES LES VALEURS D'UNE COLONNE
-    try:
-        #session.execute(text("UPDATE health_check SET single_leg_proprio_test = NULL"))
-        session.execute(text("UPDATE health_check SET single_leg_proprio_test = 125 WHERE date = '2025-08-06'"))
-    except Exception as e:
-        print(f"Erreur lors de l'initialisation de la colonne single_leg_proprio_test: {e}")
+    # try:
+    #     session.execute(text("UPDATE health_check SET single_leg_proprio_test = NULL"))
+    #     session.execute(text("UPDATE health_check SET single_leg_proprio_test = 125 WHERE date = '2025-08-06'"))
+    # except Exception as e:
+    #     print(f"Erreur lors de l'initialisation de la colonne single_leg_proprio_test: {e}")
 
     # RENOMMER UNE COLONNE
     # try:
@@ -40,7 +40,7 @@ with Session(engine) as session:
 
     # SUPPRIMER LES LIGNES REMPLISSANT UNE CERTAINE CONDITION
     # try:
-    #     session.execute(text("DELETE FROM health_check WHERE id IS NULL;"))
+    #     session.execute(text("DELETE FROM user WHERE name IS 'Antoine blabla';"))
     # except Exception as e:
     #     print(f"Erreur: {e}")
 
@@ -68,6 +68,8 @@ with Session(engine) as session:
         # """))
         
         # session.execute(text("DROP TABLE decathlonperformance_old;"))
+
+
     # except Exception as e:
     #     print(f"Erreur: {e}")
         

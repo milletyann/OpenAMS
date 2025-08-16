@@ -54,7 +54,6 @@ training_type_to_event_mapping = {
     "Javelot - Élan complet": {"sport": "Javelot", "type": "Recherche repères"}, 
     "Javelot - Gammes": {"sport": "Javelot", "type": "Gammes"},
     
-    "Lancer - PPG": {"sport": "Muscu", "type": "PPG"},
     "Muscu - Force": {"sport": "Muscu", "type": "Force"},
     "Muscu - Puissance": {"sport": "Muscu", "type": "Puissance"},
     "Muscu - Explosivité": {"sport": "Muscu", "type": "Explosivité"},

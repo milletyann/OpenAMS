@@ -2,9 +2,10 @@ from enum import Enum
 
 # === SPORTS === #
 class Sport(str, Enum):
+    Athletisme = "Athlétisme"
+    PrepaPhysique = "Prépa Physique"
     Various = "Divers"
     Mobilite = "Mobilité"
-    Athletisme = "Athlétisme"
     Volleyball = "Volley-ball"
     
 # training session names
@@ -51,13 +52,6 @@ class AthleTrainings(str, Enum):
     javElanC = "Javelot - Élan complet"
     javGammes = "Javelot - Gammes"
     
-    lancerPpg = "Lancer - PPG"
-    force = "Muscu - Force"
-    puiss = "Muscu - Puissance"
-    explo = "Muscu - Explosivité"
-    ppg = "PPG"
-    bondissements = "Bondissements"
-    
     compDeca = "Compétition - Décathlon"
     comp100 = "Compétition - 100m"
     compLong = "Compétition - Longueur"
@@ -70,6 +64,13 @@ class AthleTrainings(str, Enum):
     compJav = "Compétition - Javelot"
     comp1500 = "Compétition - 1500m"
     
+class MuscuTrainings(str, Enum):
+    force = "Muscu - Force"
+    puiss = "Muscu - Puissance"
+    explo = "Muscu - Explosivité"
+    ppg = "PPG"
+    bondissements = "Bondissements"
+
 class VolleyTrainings(str, Enum):
     tactique = "Tactique"
     technique = "Technique"
@@ -128,6 +129,7 @@ class AthlePerfNonMarked(str, Enum):
     tripleS = "Triple-Saut"
 
 class MuscuPerf(str, Enum):
+    #force = "Muscu - Force"
     squatFull = "Force - Full Squat"
     squatDemi = "Force - 1/2 Squat"
     squatQuart = "Force - 1/4 Squat"
