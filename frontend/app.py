@@ -14,7 +14,7 @@ def main():
 
     # Initialize session state for selected tab if not present
     if "selected_tab" not in st.session_state:
-        st.session_state.selected_tab = "Athlète"
+        st.session_state.selected_tab = "Tableau de bord"
 
     # Sidebar radio with session state syncing
     selected_tab = st.sidebar.radio(
